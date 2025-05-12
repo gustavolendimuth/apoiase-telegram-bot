@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+loguru
+python-jose[cryptography]
+pytest
+alembic
+psycopg2-binary
+black
+flake8
+isort
+httpx 
