@@ -185,10 +185,12 @@ Fase 4 - Deploy             ░░░░░░░░░░░░░░░░░�
 ## 🔗 Endpoints da API (18 total)
 
 ### Autenticação (`/api/auth`)
-- `POST /api/auth/register` - Criar conta de fazedor
-- `POST /api/auth/login` - Login
+- `POST /api/auth/login` - Login (dev: aceita qualquer email/senha; prod: integrar com APOIA.se)
+- `POST /api/auth/validate-apoiase` - Validar token APOIA.se (para produção)
 - `GET /api/auth/me` - Dados do usuário autenticado
 - `POST /api/auth/logout` - Logout
+
+**Nota**: Endpoint `/register` não implementado. Sistema usa autenticação mock em dev (qualquer email/senha) e integração com APOIA.se em produção.
 
 ### Integrações (`/api/integrations`)
 - `POST /api/integrations` - Criar integração

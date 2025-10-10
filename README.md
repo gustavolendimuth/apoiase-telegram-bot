@@ -189,22 +189,26 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 
 ## 🚀 Uso
 
-### 1. Criar Conta de Fazedor
+### 1. Fazer Login no Dashboard
 
+Acesse http://localhost:3000/login
+
+**Modo Desenvolvimento**: Use qualquer email/senha para testar
+- Email contendo "maker" → recebe role `maker`
+- Outros emails → recebe role `supporter`
+
+Exemplo:
 ```bash
-# Via API (ou use o frontend)
-curl -X POST http://localhost:3001/api/auth/register \
+# Via API
+curl -X POST http://localhost:3001/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "fazedor@example.com",
-    "password": "senha123",
-    "name": "Meu Nome"
+    "email": "maker@example.com",
+    "password": "qualquersenha"
   }'
 ```
 
-### 2. Fazer Login
-
-Acesse http://localhost:3000/login e use suas credenciais.
+**Modo Produção**: Use `/api/auth/validate-apoiase` com token da APOIA.se
 
 ### 3. Criar Integração
 
@@ -257,9 +261,10 @@ Quando alguém apoiar sua campanha:
 ### Endpoints da API
 
 #### Autenticação
-- `POST /api/auth/register` - Criar conta
-- `POST /api/auth/login` - Login
-- `GET /api/auth/me` - Dados do usuário
+- `POST /api/auth/login` - Login (dev: aceita qualquer email/senha)
+- `POST /api/auth/validate-apoiase` - Validar token APOIA.se (produção)
+- `GET /api/auth/me` - Dados do usuário autenticado
+- `POST /api/auth/logout` - Logout
 
 #### Integrações
 - `POST /api/integrations` - Criar integração

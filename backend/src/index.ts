@@ -53,10 +53,12 @@ const startServer = async () => {
     // Conectar ao banco de dados
     await connectDatabase();
 
-    // Iniciar bot do Telegram
+    // Iniciar bot do Telegram (não bloquear com await, pois bot.launch() inicia polling)
     if (process.env.TELEGRAM_BOT_TOKEN) {
       const telegramService = (await import('./services/telegramService')).default;
-      await telegramService.start();
+      telegramService.start().catch(error => {
+        logger.error('Erro ao iniciar bot do Telegram:', error);
+      });
     } else {
       logger.warn('TELEGRAM_BOT_TOKEN não configurado - bot não será iniciado');
     }

@@ -138,34 +138,36 @@ Para que o bot funcione em grupos:
 
 ## 👤 Primeiro Acesso
 
-### 1. Criar Conta de Fazedor
+### 1. Fazer Login
 
-Você pode criar uma conta via API ou diretamente pelo frontend.
+**Modo Desenvolvimento** - O sistema aceita qualquer email/senha para facilitar testes:
+
+- Email contendo "maker" → role de fazedor (maker)
+- Outros emails → role de apoiador (supporter)
+
+**Via Frontend:**
+
+1. Acesse http://localhost:3000/login
+2. Digite qualquer email (ex: `maker@test.com`)
+3. Digite qualquer senha
+4. Clique em "Entrar"
 
 **Via API:**
 
 ```bash
-curl -X POST http://localhost:3001/api/auth/register \
+curl -X POST http://localhost:3001/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "fazedor@example.com",
-    "password": "senha123",
-    "name": "Meu Nome"
+    "email": "maker@example.com",
+    "password": "qualquersenha"
   }'
 ```
 
-**Via Frontend:**
+**Modo Produção**: Use o endpoint `/api/auth/validate-apoiase` com token da APOIA.se
 
-1. Acesse http://localhost:3000
-2. Clique em "Painel do Fazedor"
-3. Clique em "Criar Conta"
-4. Preencha o formulário
+### 2. Acessar o Dashboard
 
-### 2. Fazer Login
-
-1. Acesse http://localhost:3000/login
-2. Use as credenciais criadas
-3. Você será redirecionado para o Dashboard
+Após o login, você será redirecionado automaticamente para o Dashboard em http://localhost:3000/dashboard
 
 ### 3. Criar Primeira Integração
 
@@ -286,15 +288,10 @@ apoiase-telegram-bot/
 # Health check
 curl http://localhost:3001/health
 
-# Criar conta
-curl -X POST http://localhost:3001/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"senha123","name":"Test User"}'
-
-# Login
+# Login (aceita qualquer email/senha em desenvolvimento)
 curl -X POST http://localhost:3001/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"senha123"}'
+  -d '{"email":"maker@test.com","password":"anypassword"}'
 
 # Listar integrações (precisa do token do login)
 curl http://localhost:3001/api/integrations \

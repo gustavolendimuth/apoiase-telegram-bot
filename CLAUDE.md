@@ -74,15 +74,11 @@ docker exec -it apoiase-redis redis-cli
 # Health check
 curl http://localhost:3001/health
 
-# Create account
-curl -X POST http://localhost:3001/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"senha123","name":"Test"}'
-
-# Login
+# Login (accepts any email/password in development mode)
+# Use "maker" in email for maker role, otherwise gets supporter role
 curl -X POST http://localhost:3001/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"senha123"}'
+  -d '{"email":"maker@example.com","password":"anypassword"}'
 ```
 
 ## Architecture
@@ -155,9 +151,10 @@ frontend/src/
 ## API Endpoints
 
 ### Authentication (`/api/auth`)
-- `POST /register` - Create maker account
-- `POST /login` - Login
+- `POST /login` - Login (development mode: accepts any email/password. Email with "maker" gets maker role, otherwise supporter)
+- `POST /validate-apoiase` - Validate APOIA.se token (production authentication)
 - `GET /me` - Get current user
+- `POST /logout` - Logout
 
 ### Integrations (`/api/integrations`)
 - `POST /` - Create integration
