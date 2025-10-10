@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: apoiase-mongodb
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_DATABASE: apoiase-telegram-bot
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - apoiase-network
+
+  redis:
+    image: redis:alpine
+    container_name: apoiase-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - apoiase-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+    container_name: apoiase-backend
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://mongodb:27017/apoiase-telegram-bot
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - apoiase-network
+    volumes:
+      - ./backend/logs:/app/logs
+
+  frontend:
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+    container_name: apoiase-frontend
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:3001
+    env_file:
+      - ./frontend/.env.local
+    depends_on:
+      - backend
+    networks:
+      - apoiase-network
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  apoiase-network:
+    driver: bridge
