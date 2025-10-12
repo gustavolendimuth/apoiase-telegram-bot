@@ -9,6 +9,8 @@ import { apiLimiter } from './middleware/rateLimiter';
 import authRoutes from './routes/authRoutes';
 import integrationRoutes from './routes/integrationRoutes';
 import webhookRoutes from './routes/webhookRoutes';
+import campaignRoutes from './routes/campaignRoutes';
+import supportRoutes from './routes/supportRoutes';
 import { setupRecurringJobs } from './jobs/syncMembers';
 
 // Carregar variáveis de ambiente
@@ -39,9 +41,9 @@ app.get('/health', (req, res) => {
 // Rotas da API
 app.use('/api/auth', authRoutes);
 app.use('/api/integrations', integrationRoutes);
+app.use('/api/campaigns', campaignRoutes);
+app.use('/api/supports', supportRoutes);
 app.use('/webhook', webhookRoutes);
-// TODO: Adicionar outras rotas quando forem criadas
-// app.use('/api/members', memberRoutes);
 
 // Handlers de erro
 app.use(notFoundHandler);

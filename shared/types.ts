@@ -47,7 +47,7 @@ export interface EventLog {
 export interface User {
   id: string;
   email: string;
-  role: 'maker' | 'supporter' | 'admin';
+  roles: Array<'admin' | 'user'>;
 }
 
 export interface ApiResponse<T> {

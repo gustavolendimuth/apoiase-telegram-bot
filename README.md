@@ -132,11 +132,12 @@ cp frontend/.env.example frontend/.env.local
 nano backend/.env
 nano frontend/.env.local
 
-# 4. Inicie a infraestrutura (MongoDB + Redis)
-docker-compose up -d mongodb redis
+# 4. Inicie a aplicação em modo desenvolvimento (com hot reload)
+npm run docker:dev
 
-# 5. Inicie a aplicação
-npm run dev
+# Alternativa: desenvolvimento sem Docker
+docker-compose up -d mongodb redis  # Apenas infra
+npm run dev                          # Backend + Frontend local
 ```
 
 Acesse:
@@ -189,26 +190,48 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 
 ## 🚀 Uso
 
-### 1. Fazer Login no Dashboard
+### 1. Registrar e Fazer Login
 
+**Registro:**
+Acesse http://localhost:3000/register e crie sua conta
+
+```bash
+# Via API
+curl -X POST http://localhost:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "maker@example.com",
+    "password": "senha123",
+    "name": "Seu Nome"
+  }'
+```
+
+**Login:**
 Acesse http://localhost:3000/login
 
-**Modo Desenvolvimento**: Use qualquer email/senha para testar
-- Email contendo "maker" → recebe role `maker`
-- Outros emails → recebe role `supporter`
-
-Exemplo:
 ```bash
 # Via API
 curl -X POST http://localhost:3001/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "maker@example.com",
-    "password": "qualquersenha"
+    "password": "senha123"
   }'
 ```
 
+O sistema retorna um JWT token que deve ser incluído em todas as requisições autenticadas:
+```
+Authorization: Bearer SEU_TOKEN_AQUI
+```
+
 **Modo Produção**: Use `/api/auth/validate-apoiase` com token da APOIA.se
+
+### 2. Criar uma Campanha
+
+Acesse http://localhost:3000/criar-campanha e preencha o wizard de 3 etapas:
+1. **Informações Básicas**: Título, slug, categoria, descrição
+2. **Meta e Mídia**: Valor da meta, imagem de capa, vídeo (opcional)
+3. **Níveis de Apoio**: Defina os tiers de recompensa e benefícios
 
 ### 3. Criar Integração
 
@@ -257,24 +280,45 @@ Quando alguém apoiar sua campanha:
 - **[GETTING_STARTED.md](GETTING_STARTED.md)** - Guia de início rápido
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - Documentação da arquitetura
 - **[COMMANDS.md](COMMANDS.md)** - Comandos úteis
+- **[DOCKER_MODES.md](DOCKER_MODES.md)** - Modos desenvolvimento vs produção
 
 ### Endpoints da API
 
 #### Autenticação
-- `POST /api/auth/login` - Login (dev: aceita qualquer email/senha)
+- `POST /api/auth/register` - Registrar novo usuário
+- `POST /api/auth/login` - Login com email/senha
 - `POST /api/auth/validate-apoiase` - Validar token APOIA.se (produção)
 - `GET /api/auth/me` - Dados do usuário autenticado
 - `POST /api/auth/logout` - Logout
 
+#### Campanhas
+- `POST /api/campaigns` - Criar campanha (requer auth)
+- `GET /api/campaigns/all` - Listar campanhas públicas
+- `GET /api/campaigns/search` - Buscar campanhas
+- `GET /api/campaigns/my/campaigns` - Minhas campanhas (requer auth)
+- `GET /api/campaigns/slug/:slug` - Buscar por slug
+- `GET /api/campaigns/:id` - Detalhes da campanha
+- `PUT /api/campaigns/:id` - Atualizar campanha (requer auth)
+- `DELETE /api/campaigns/:id` - Remover campanha (requer auth)
+
+#### Apoios
+- `POST /api/supports` - Criar apoio (requer auth)
+- `GET /api/supports/my/supports` - Meus apoios (requer auth)
+- `GET /api/supports/campaign/:campaignId` - Apoios de uma campanha
+- `POST /api/supports/:id/pause` - Pausar apoio (requer auth)
+- `POST /api/supports/:id/resume` - Retomar apoio (requer auth)
+- `POST /api/supports/:id/cancel` - Cancelar apoio (requer auth)
+
 #### Integrações
-- `POST /api/integrations` - Criar integração
-- `GET /api/integrations` - Listar integrações
-- `GET /api/integrations/:id` - Detalhes da integração
-- `PUT /api/integrations/:id` - Atualizar integração
-- `DELETE /api/integrations/:id` - Remover integração
-- `POST /api/integrations/:id/toggle` - Ativar/desativar
-- `GET /api/integrations/:id/members` - Listar membros
-- `POST /api/integrations/:id/sync` - Sincronizar agora
+- `POST /api/integrations` - Criar integração (requer auth)
+- `GET /api/integrations` - Listar integrações (requer auth)
+- `GET /api/integrations/telegram-link/:campaignId` - Link do Telegram (requer auth)
+- `GET /api/integrations/:id` - Detalhes da integração (requer auth)
+- `PUT /api/integrations/:id` - Atualizar integração (requer auth)
+- `DELETE /api/integrations/:id` - Remover integração (requer auth)
+- `POST /api/integrations/:id/activate` - Ativar integração (requer auth)
+- `POST /api/integrations/:id/deactivate` - Desativar integração (requer auth)
+- `POST /api/integrations/:id/regenerate-key` - Regenerar API key (requer auth)
 
 #### Webhooks
 - `POST /webhook/apoiase` - Webhook da APOIA.se
@@ -422,20 +466,31 @@ Distribuído sob a licença MIT. Veja [LICENSE](LICENSE) para mais informações
 
 ---
 
-## 📊 Estatísticas do Projeto (Verificadas)
+## 📊 Estatísticas do Projeto (Atualizadas 2025-10-12)
 
-- **39 arquivos** TypeScript/TSX criados
-- **~4.433 linhas** de código (excluindo dependências)
-- **18 endpoints** de API REST
-- **7 componentes** UI React reutilizáveis
+- **60+ arquivos** TypeScript/TSX criados
+- **~8.000+ linhas** de código (excluindo dependências)
+- **28 endpoints** de API REST
+- **9 componentes** UI React reutilizáveis
 - **2 custom hooks** (useAuth, useIntegrations)
-- **3 páginas** principais (Home, Login, Dashboard)
+- **10+ páginas** (Home, Login, Register, Campaigns, Campaign Detail, My Campaigns, Create Campaign, My Supports, Profile)
 - **6 eventos** de webhook processados
-- **3 Models** MongoDB (Integration, Member, EventLog)
-- **3 Controllers** (auth, integration, webhook)
-- **5 Services** (auth, integration, member, telegram, verification)
+- **6 Models** MongoDB (Integration, Member, EventLog, Campaign, Support, User)
+- **5 Controllers** (auth, integration, webhook, campaign, support)
+- **7 Services** (auth, integration, member, telegram, verification, campaign, support)
 - **1 Job** com 2 tarefas recorrentes (sync diário + verificação 6h)
 - **100% TypeScript** (type-safe)
+
+### Funcionalidades Implementadas Recentemente
+- ✅ Sistema completo de campanhas (CRUD)
+- ✅ Gerenciamento de apoios/assinaturas
+- ✅ Autenticação com banco de dados real (bcrypt)
+- ✅ Registro de novos usuários
+- ✅ Landing page moderna com showcase de campanhas
+- ✅ Wizard de criação de campanhas (3 etapas)
+- ✅ Dashboard "Minhas Campanhas"
+- ✅ Dashboard "Meus Apoios"
+- ✅ Navbar e Footer globais
 
 ---
 

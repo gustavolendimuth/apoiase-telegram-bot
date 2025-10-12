@@ -6,11 +6,13 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
+    name: '',
     email: '',
     password: '',
+    confirmPassword: '',
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -22,8 +24,18 @@ export default function LoginPage() {
     setSuccess('');
 
     // Validation
-    if (!formData.email || !formData.password) {
+    if (!formData.name || !formData.email || !formData.password) {
       setError('Por favor, preencha todos os campos');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('As senhas não coincidem');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError('A senha deve ter pelo menos 6 caracteres');
       return;
     }
 
@@ -31,15 +43,17 @@ export default function LoginPage() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
+            name: formData.name,
             email: formData.email,
             password: formData.password,
+            // roles will default to ['supporter'] on backend
           }),
         }
       );
@@ -47,7 +61,7 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao fazer login');
+        throw new Error(data.error || 'Erro ao criar conta');
       }
 
       // Save token
@@ -55,16 +69,14 @@ export default function LoginPage() {
       localStorage.setItem('user', JSON.stringify(data.user));
 
       // Show success message
-      setSuccess('Login realizado com sucesso! Redirecionando...');
+      setSuccess('Conta criada com sucesso! Redirecionando...');
 
-      // Redirect after 1.5 seconds
+      // Redirect after 2 seconds
       setTimeout(() => {
         router.push('/');
-        // Force page reload to update Navbar
-        window.location.href = '/';
-      }, 1500);
+      }, 2000);
     } catch (err: any) {
-      setError(err.message || 'Erro ao fazer login');
+      setError(err.message || 'Erro ao criar conta');
     } finally {
       setLoading(false);
     }
@@ -74,10 +86,10 @@ export default function LoginPage() {
     <div className="max-w-md mx-auto px-4 py-16">
         <Card className="p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">
-            Entrar
+            Criar conta
           </h1>
           <p className="text-gray-600 mb-8 text-center">
-            Acesse sua conta APOIA.se
+            Junte-se à comunidade APOIA.se
           </p>
 
           {error && (
@@ -93,6 +105,22 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nome completo
+              </label>
+              <Input
+                type="text"
+                placeholder="Seu nome"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                required
+              />
+            </div>
+
             {/* Email */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -116,10 +144,26 @@ export default function LoginPage() {
               </label>
               <Input
                 type="password"
-                placeholder="Sua senha"
+                placeholder="Mínimo 6 caracteres"
                 value={formData.password}
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
+                }
+                required
+              />
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Confirmar senha
+              </label>
+              <Input
+                type="password"
+                placeholder="Digite a senha novamente"
+                value={formData.confirmPassword}
+                onChange={(e) =>
+                  setFormData({ ...formData, confirmPassword: e.target.value })
                 }
                 required
               />
@@ -131,18 +175,18 @@ export default function LoginPage() {
               className="w-full"
               disabled={loading}
             >
-              {loading ? 'Entrando...' : 'Entrar'}
+              {loading ? 'Criando conta...' : 'Criar conta'}
             </Button>
 
-            {/* Register Link */}
+            {/* Login Link */}
             <div className="text-center text-sm text-gray-600">
-              Não tem uma conta?{' '}
+              Já tem uma conta?{' '}
               <button
                 type="button"
-                onClick={() => router.push('/register')}
+                onClick={() => router.push('/login')}
                 className="text-blue-600 hover:underline font-semibold"
               >
-                Criar conta
+                Fazer login
               </button>
             </div>
           </form>

@@ -276,10 +276,57 @@ export class IntegrationService {
       }
 
       // Verificar se o usuário é o criador
-      return integration.createdBy === userId;
+      return integration.createdBy.toString() === userId;
     } catch (error) {
       logger.error('Erro ao verificar acesso:', error);
       return false;
+    }
+  }
+
+  /**
+   * Busca o link do Telegram de uma campanha
+   */
+  async getTelegramLinkByCampaign(campaignId: string): Promise<string | null> {
+    try {
+      const integration = await Integration.findOne({
+        campaignId,
+        isActive: true,
+      });
+
+      if (!integration) {
+        return null;
+      }
+
+      // Gera o link do grupo Telegram
+      // Se o grupo começar com -100, é um supergrupo (remover -100 e usar apenas os dígitos)
+      const groupId = integration.telegramGroupId;
+      let telegramLink: string;
+
+      if (groupId.startsWith('-100')) {
+        // Supergrupo: https://t.me/c/{id_sem_100}/{thread_id}
+        const cleanId = groupId.replace('-100', '');
+        telegramLink = `https://t.me/c/${cleanId}`;
+      } else if (groupId.startsWith('@')) {
+        // Username público
+        telegramLink = `https://t.me/${groupId.replace('@', '')}`;
+      } else {
+        // Tentar criar link de convite
+        try {
+          const inviteLink = await telegramService.createInviteLink(
+            parseInt(groupId),
+            0 // Sem expiração
+          );
+          telegramLink = inviteLink;
+        } catch (error) {
+          logger.warn('Erro ao criar link de convite, usando ID:', error);
+          telegramLink = `https://t.me/c/${groupId.replace('-', '')}`;
+        }
+      }
+
+      return telegramLink;
+    } catch (error) {
+      logger.error('Erro ao buscar link do Telegram:', error);
+      throw error;
     }
   }
 }

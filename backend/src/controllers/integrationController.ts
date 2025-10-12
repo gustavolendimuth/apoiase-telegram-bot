@@ -133,7 +133,7 @@ export class IntegrationController {
       // Verificar se o usuário tem acesso
       const hasAccess = await integrationService.checkUserAccess(id, req.user.id);
 
-      if (!hasAccess && req.user.role !== 'admin') {
+      if (!hasAccess && !req.user.roles.includes('admin')) {
         res.status(403).json({
           error: 'Acesso negado',
         });
@@ -179,7 +179,7 @@ export class IntegrationController {
       // Verificar se o usuário tem acesso
       const hasAccess = await integrationService.checkUserAccess(id, req.user.id);
 
-      if (!hasAccess && req.user.role !== 'admin') {
+      if (!hasAccess && !req.user.roles.includes('admin')) {
         res.status(403).json({
           error: 'Acesso negado',
         });
@@ -241,7 +241,7 @@ export class IntegrationController {
       // Verificar se o usuário tem acesso
       const hasAccess = await integrationService.checkUserAccess(id, req.user.id);
 
-      if (!hasAccess && req.user.role !== 'admin') {
+      if (!hasAccess && !req.user.roles.includes('admin')) {
         res.status(403).json({
           error: 'Acesso negado',
         });
@@ -281,7 +281,7 @@ export class IntegrationController {
 
       const hasAccess = await integrationService.checkUserAccess(id, req.user.id);
 
-      if (!hasAccess && req.user.role !== 'admin') {
+      if (!hasAccess && !req.user.roles.includes('admin')) {
         res.status(403).json({
           error: 'Acesso negado',
         });
@@ -327,7 +327,7 @@ export class IntegrationController {
 
       const hasAccess = await integrationService.checkUserAccess(id, req.user.id);
 
-      if (!hasAccess && req.user.role !== 'admin') {
+      if (!hasAccess && !req.user.roles.includes('admin')) {
         res.status(403).json({
           error: 'Acesso negado',
         });
@@ -373,7 +373,7 @@ export class IntegrationController {
 
       const hasAccess = await integrationService.checkUserAccess(id, req.user.id);
 
-      if (!hasAccess && req.user.role !== 'admin') {
+      if (!hasAccess && !req.user.roles.includes('admin')) {
         res.status(403).json({
           error: 'Acesso negado',
         });
@@ -402,6 +402,39 @@ export class IntegrationController {
       logger.error('Erro ao regenerar API key via API:', error);
       res.status(500).json({
         error: 'Erro ao regenerar API key',
+      });
+    }
+  }
+
+  /**
+   * Buscar link do Telegram por campanha
+   * GET /api/integrations/telegram-link/:campaignId
+   */
+  async getTelegramLink(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { campaignId } = req.params;
+
+      if (!req.user) {
+        res.status(401).json({ error: 'Não autenticado' });
+        return;
+      }
+
+      const telegramLink = await integrationService.getTelegramLinkByCampaign(campaignId);
+
+      if (!telegramLink) {
+        res.status(404).json({
+          error: 'Nenhuma integração do Telegram encontrada para esta campanha',
+        });
+        return;
+      }
+
+      res.json({
+        telegramLink,
+      });
+    } catch (error) {
+      logger.error('Erro ao buscar link do Telegram via API:', error);
+      res.status(500).json({
+        error: 'Erro ao buscar link do Telegram',
       });
     }
   }

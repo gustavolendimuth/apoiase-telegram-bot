@@ -1,11 +1,13 @@
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
+import bcrypt from 'bcrypt';
 import logger from '../config/logger';
+import User from '../models/User';
 
 export interface AuthUser {
   id: string;
   email: string;
-  role: 'maker' | 'supporter' | 'admin';
+  roles: Array<'admin' | 'user'>;
 }
 
 /**
@@ -45,7 +47,7 @@ export class AuthService {
         return {
           id: response.data.user.id,
           email: response.data.user.email,
-          role: response.data.user.role || 'supporter',
+          roles: response.data.user.roles || ['user'],
         };
       }
 
@@ -64,7 +66,7 @@ export class AuthService {
       {
         id: user.id,
         email: user.email,
-        role: user.role,
+        roles: user.roles,
       },
       this.jwtSecret,
       {
@@ -87,25 +89,82 @@ export class AuthService {
   }
 
   /**
-   * Autentica usuário (mock para desenvolvimento)
+   * Autentica usuário com banco de dados local
    */
   async authenticateUser(email: string, password: string): Promise<{ user: AuthUser; token: string } | null> {
     try {
-      // TODO: Integração real com APOIA.se
-      // Por enquanto, aceitar qualquer email/senha para desenvolvimento
-      logger.warn('Usando autenticação mock - apenas para desenvolvimento!');
+      const userDoc = await User.findOne({ email });
+
+      if (!userDoc) {
+        logger.warn(`Login failed - user not found: ${email}`);
+        return null;
+      }
+
+      // Verify password
+      const isPasswordValid = await bcrypt.compare(password, userDoc.password);
+      if (!isPasswordValid) {
+        logger.warn(`Login failed - invalid password: ${email}`);
+        return null;
+      }
 
       const user: AuthUser = {
-        id: 'mock-user-id',
-        email,
-        role: email.includes('maker') ? 'maker' : 'supporter',
+        id: (userDoc._id as any).toString(),
+        email: userDoc.email,
+        roles: userDoc.roles,
       };
 
       const token = this.generateToken(user);
 
+      logger.info(`User authenticated: ${email}`);
       return { user, token };
     } catch (error) {
       logger.error('Erro ao autenticar usuário:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Registra novo usuário
+   */
+  async registerUser(
+    email: string,
+    password: string,
+    name: string,
+    roles?: Array<'admin' | 'user'>
+  ): Promise<{ user: AuthUser; token: string } | null> {
+    try {
+      // Check if user already exists
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        logger.warn(`Registration failed - user already exists: ${email}`);
+        return null;
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create user with default roles ['user'] if not provided
+      const userDoc = new User({
+        email,
+        password: hashedPassword,
+        name,
+        roles: roles || ['user'],
+      });
+
+      await userDoc.save();
+
+      const user: AuthUser = {
+        id: (userDoc._id as any).toString(),
+        email: userDoc.email,
+        roles: userDoc.roles,
+      };
+
+      const token = this.generateToken(user);
+
+      logger.info(`User registered: ${email}`);
+      return { user, token };
+    } catch (error) {
+      logger.error('Erro ao registrar usuário:', error);
       return null;
     }
   }

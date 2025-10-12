@@ -1,0 +1,23 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY frontend/package*.json ./frontend/
+COPY shared/package*.json ./shared/
+
+# Install all dependencies (including dev dependencies)
+RUN npm install
+
+# Copy source code
+COPY frontend ./frontend
+COPY shared ./shared
+
+WORKDIR /app/frontend
+
+# Expose port
+EXPOSE 3000
+
+# Start in development mode with hot reload
+CMD ["npm", "run", "dev"]

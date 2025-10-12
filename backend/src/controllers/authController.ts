@@ -112,6 +112,39 @@ export class AuthController {
       res.status(500).json({ error: 'Erro ao processar logout' });
     }
   }
+
+  /**
+   * Registra novo usuário
+   * POST /api/auth/register
+   */
+  async register(req: Request, res: Response): Promise<void> {
+    try {
+      const { email, password, name, role } = req.body;
+
+      if (!email || !password || !name) {
+        res.status(400).json({ error: 'Email, senha e nome são obrigatórios' });
+        return;
+      }
+
+      const result = await authService.registerUser(email, password, name, role);
+
+      if (!result) {
+        res.status(400).json({ error: 'Email já cadastrado' });
+        return;
+      }
+
+      logger.info('Usuário registrado com sucesso:', email);
+
+      res.status(201).json({
+        message: 'Usuário registrado com sucesso',
+        user: result.user,
+        token: result.token,
+      });
+    } catch (error) {
+      logger.error('Erro ao registrar usuário:', error);
+      res.status(500).json({ error: 'Erro ao processar registro' });
+    }
+  }
 }
 
 export default new AuthController();

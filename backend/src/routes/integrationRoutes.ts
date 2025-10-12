@@ -1,22 +1,23 @@
 import { Router } from 'express';
 import integrationController from '../controllers/integrationController';
-import { authenticateToken, requireRole } from '../middleware/auth';
+import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 
 // Todas as rotas de integração requerem autenticação
 router.use(authenticateToken);
 
-// Rotas CRUD
-router.post('/', requireRole('maker', 'admin'), integrationController.create);
+// Rotas CRUD (ownership verification done in controller)
+router.post('/', integrationController.create);
 router.get('/', integrationController.list);
+router.get('/telegram-link/:campaignId', integrationController.getTelegramLink);
 router.get('/:id', integrationController.getById);
-router.put('/:id', requireRole('maker', 'admin'), integrationController.update);
-router.delete('/:id', requireRole('maker', 'admin'), integrationController.delete);
+router.put('/:id', integrationController.update);
+router.delete('/:id', integrationController.delete);
 
-// Rotas de ação
-router.post('/:id/activate', requireRole('maker', 'admin'), integrationController.activate);
-router.post('/:id/deactivate', requireRole('maker', 'admin'), integrationController.deactivate);
-router.post('/:id/regenerate-key', requireRole('maker', 'admin'), integrationController.regenerateApiKey);
+// Rotas de ação (ownership verification done in controller)
+router.post('/:id/activate', integrationController.activate);
+router.post('/:id/deactivate', integrationController.deactivate);
+router.post('/:id/regenerate-key', integrationController.regenerateApiKey);
 
 export default router;

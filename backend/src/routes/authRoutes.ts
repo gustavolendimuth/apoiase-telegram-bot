@@ -7,6 +7,7 @@ const router = Router();
 
 // Rotas públicas (com rate limiting)
 router.post('/login', authLimiter, authController.login);
+router.post('/register', authLimiter, authController.register);
 router.post('/validate-apoiase', authLimiter, authController.validateApoiase);
 
 // Rotas protegidas

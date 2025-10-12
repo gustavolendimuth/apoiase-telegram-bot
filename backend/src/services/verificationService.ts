@@ -111,7 +111,7 @@ export class VerificationService {
       // Verificar status na APOIA.se
       const supporterData = await this.verifySupporterStatus(
         email,
-        integration.campaignId
+        integration.campaignId.toString()
       );
 
       if (!supporterData) {
@@ -274,13 +274,13 @@ export class VerificationService {
 
           const supporterData = await this.verifySupporterStatus(
             member.supporterEmail,
-            integration.campaignId
+            integration.campaignId.toString()
           );
 
           if (!supporterData) {
             // Apoiador não encontrado - remover
             await memberService.removeMember(
-              member._id.toString(),
+              (member._id as any).toString(),
               'supporter_not_found'
             );
             removed++;
@@ -293,10 +293,10 @@ export class VerificationService {
             supporterData.paymentStatus === 'up_to_date';
 
           if (!isPaymentOk && member.status === 'active') {
-            await memberService.markPaymentOverdue(member._id.toString());
+            await memberService.markPaymentOverdue((member._id as any).toString());
             updated++;
           } else if (isPaymentOk && member.status === 'payment_overdue') {
-            await memberService.updatePaymentStatus(member._id.toString(), true);
+            await memberService.updatePaymentStatus((member._id as any).toString(), true);
             updated++;
           }
         } catch (error) {

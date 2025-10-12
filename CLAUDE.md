@@ -8,15 +8,15 @@ APOIA.se Telegram Bot - An integration system between APOIA.se (crowdfunding pla
 
 **Status**: ✅ MVP Complete (Phases 1-3 done, Deploy pending)
 
-**Project Stats** (Verified):
-- 39 TypeScript/TSX files (~4,433 lines of code)
-- 18 REST API endpoints
-- 3 Models (Integration, Member, EventLog)
-- 3 Controllers (auth, integration, webhook)
-- 5 Services (auth, integration, member, telegram, verification)
-- 7 UI Components (Button, Input, Card, Badge, Modal, Toast, Loading)
+**Project Stats** (Updated 2025-10-12):
+- 60+ TypeScript/TSX files (~8,000+ lines of code)
+- 28 REST API endpoints
+- 6 Models (Integration, Member, EventLog, Campaign, Support, User)
+- 5 Controllers (auth, integration, webhook, campaign, support)
+- 7 Services (auth, integration, member, telegram, verification, campaign, support)
+- 9 UI Components (Button, Input, Card, Badge, Modal, Toast, Loading, Navbar, Footer)
 - 2 Custom Hooks (useAuth, useIntegrations)
-- 3 Pages (Home, Login, Dashboard)
+- 10+ Pages (Home, Login, Register, Campaigns, Campaign Detail, My Campaigns, Create Campaign, My Supports, Profile)
 
 ## Development Commands
 
@@ -38,21 +38,29 @@ npm run build:backend
 npm run build:frontend
 ```
 
-### Infrastructure (Docker)
+### Docker Commands (Development & Production)
 ```bash
-# Start infrastructure only (MongoDB + Redis)
-docker-compose up -d mongodb redis
+# DEVELOPMENT MODE (with hot reload - recommended for local dev)
+npm run docker:dev          # Start all services in dev mode
+npm run docker:dev:logs     # View logs
 
-# Start all services
-docker-compose up -d
+# PRODUCTION MODE (optimized build - for deploy)
+npm run docker:prod         # Start all services in prod mode
 
-# View logs
-docker-compose logs -f
-docker-compose logs -f backend
+# MANAGEMENT
+npm run docker:down         # Stop all containers
+npm run docker:clean        # Stop and remove volumes (WARNING: deletes DB data)
 
-# Stop and remove volumes (WARNING: deletes DB data)
-docker-compose down -v
+# LEGACY COMMANDS (still work, but prefer npm scripts above)
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d  # Dev mode
+docker-compose up -d                                                   # Prod mode
+docker-compose logs -f                                                 # View logs
+docker-compose down -v                                                 # Clean all
 ```
+
+**Development vs Production:**
+- **Dev mode**: Hot reload enabled, changes reflect instantly, no rebuild needed
+- **Prod mode**: Optimized build, requires rebuild after code changes, smaller images
 
 ### Database Access
 ```bash
@@ -74,11 +82,21 @@ docker exec -it apoiase-redis redis-cli
 # Health check
 curl http://localhost:3001/health
 
-# Login (accepts any email/password in development mode)
-# Use "maker" in email for maker role, otherwise gets supporter role
+# Register a new user
+curl -X POST http://localhost:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"maker@example.com","password":"test123","name":"Test Maker"}'
+
+# Login with registered user
 curl -X POST http://localhost:3001/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"maker@example.com","password":"anypassword"}'
+  -d '{"email":"maker@example.com","password":"test123"}'
+
+# Create a campaign (requires authentication token)
+curl -X POST http://localhost:3001/api/campaigns \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -d '{"title":"My Campaign","slug":"my-campaign","description":"Description","category":"technology","goal":1000,"currency":"BRL","imageUrl":"https://example.com/image.jpg","rewardLevels":[{"id":"1","title":"Basic","amount":10,"description":"Basic tier","benefits":["Benefit 1"]}]}'
 ```
 
 ## Architecture
@@ -103,16 +121,36 @@ apoiase-telegram-bot/
 ```
 backend/src/
 ├── config/            # Database, Redis, Logger
-├── models/            # Mongoose models (Integration, Member, EventLog)
+├── models/            # Mongoose models
+│   ├── Integration.ts # Telegram integrations
+│   ├── Member.ts      # Group members
+│   ├── EventLog.ts    # Audit logs
+│   ├── Campaign.ts    # Crowdfunding campaigns
+│   ├── Support.ts     # User supports/subscriptions
+│   └── User.ts        # User accounts
 ├── services/          # Business logic
-│   ├── integrationService.ts  # CRUD, API key generation
+│   ├── integrationService.ts  # CRUD, API key generation, Telegram links
 │   ├── memberService.ts       # Member management, invite links
-│   ├── verificationService.ts # APOIA.se API verification (mock + real)
-│   └── telegramService.ts     # Bot logic, commands
+│   ├── verificationService.ts # APOIA.se API verification
+│   ├── telegramService.ts     # Bot logic, commands
+│   ├── authService.ts         # Authentication, JWT, user registration
+│   ├── campaignService.ts     # Campaign CRUD operations
+│   └── supportService.ts      # Support management
 ├── controllers/       # REST controllers
+│   ├── authController.ts      # Login, register, logout
+│   ├── integrationController.ts # Integrations CRUD
+│   ├── webhookController.ts   # APOIA.se & Telegram webhooks
+│   ├── campaignController.ts  # Campaigns CRUD
+│   └── supportController.ts   # Supports CRUD
 ├── routes/            # Express routes
+│   ├── authRoutes.ts
+│   ├── integrationRoutes.ts
+│   ├── webhookRoutes.ts
+│   ├── campaignRoutes.ts
+│   └── supportRoutes.ts
 ├── middleware/        # Auth, rate limiting, error handling
 ├── jobs/              # Bull jobs (syncMembers.ts)
+├── scripts/           # Utility scripts (seedCampaigns.ts)
 └── index.ts           # Entry point
 ```
 
@@ -120,20 +158,54 @@ backend/src/
 ```
 frontend/src/
 ├── app/              # Next.js App Router pages
-│   ├── page.tsx      # Landing page
+│   ├── page.tsx      # Landing page (campaigns showcase)
 │   ├── login/        # Login page
-│   └── dashboard/    # Dashboard (integrations management)
-├── components/ui/    # Reusable UI components
+│   ├── register/     # Registration page
+│   ├── campanhas/    # All campaigns list
+│   ├── campanha/[slug]/ # Campaign detail page
+│   ├── criar-campanha/  # Create campaign wizard
+│   ├── minhas-campanhas/ # My campaigns dashboard
+│   ├── meus-apoios/  # My supports/subscriptions
+│   ├── profile/      # User profile
+│   └── layout.tsx    # Root layout with Navbar & Footer
+├── components/
+│   ├── ui/           # Reusable UI components
+│   │   ├── Button.tsx
+│   │   ├── Input.tsx
+│   │   ├── Card.tsx
+│   │   ├── Badge.tsx
+│   │   ├── Modal.tsx
+│   │   ├── Toast.tsx
+│   │   └── Loading.tsx
+│   ├── Navbar.tsx    # Global navigation bar
+│   └── Footer.tsx    # Global footer
 ├── hooks/            # Custom hooks (useAuth, useIntegrations)
-└── lib/api.ts        # Axios API client
+├── lib/api.ts        # Axios API client with interceptors
+└── styles/globals.css # TailwindCSS styles
 ```
 
 ### Data Models
 
-**Integration** (links APOIA.se campaign to Telegram group)
-- campaignId, telegramGroupId, apiKey, rewardLevels, isActive
+**User** (user accounts with authentication)
+- email, password (bcrypt hashed), name, roles (admin | user)
+- Created when users register via `/api/auth/register`
 
-**Member** (supporter in a group)
+**Campaign** (crowdfunding campaigns)
+- makerId (ref to User), title, slug, description, category, goal, raised, currency
+- imageUrl, videoUrl, rewardLevels[], supporters, status (draft | active | paused | completed)
+- Full campaign management with CRUD operations
+
+**Support** (user subscriptions to campaigns)
+- userId (ref to User), campaignId (ref to Campaign), rewardLevelId, amount
+- status (active | cancelled | paused | payment_failed), payment dates, recurring
+- Tracks user's active supports and payment status
+
+**Integration** (links campaigns to Telegram groups)
+- campaignId (ref to Campaign), telegramGroupId, telegramGroupType, apiKey
+- rewardLevels[], isActive, createdBy (ref to User)
+- Now uses proper ObjectId references instead of strings
+
+**Member** (supporter in a Telegram group)
 - integrationId, supporterEmail, supporterId, telegramUserId
 - status: pending_verification | active | payment_overdue | removed
 - inviteToken, inviteExpiresAt (24h validity)
@@ -151,20 +223,40 @@ frontend/src/
 ## API Endpoints
 
 ### Authentication (`/api/auth`)
-- `POST /login` - Login (development mode: accepts any email/password. Email with "maker" gets maker role, otherwise supporter)
+- `POST /register` - Register new user (email, password, name)
+- `POST /login` - Login with email/password (returns JWT token)
 - `POST /validate-apoiase` - Validate APOIA.se token (production authentication)
-- `GET /me` - Get current user
-- `POST /logout` - Logout
+- `GET /me` - Get current user info (requires auth)
+- `POST /logout` - Logout (requires auth)
+
+### Campaigns (`/api/campaigns`)
+- `POST /` - Create new campaign (requires auth)
+- `GET /all` - List all public campaigns (with filters: category, status, search)
+- `GET /search` - Search campaigns by query
+- `GET /my/campaigns` - List current user's campaigns (requires auth)
+- `GET /slug/:slug` - Get campaign by slug (public)
+- `GET /:id` - Get campaign by ID (public)
+- `PUT /:id` - Update campaign (requires auth + ownership)
+- `DELETE /:id` - Delete campaign (requires auth + ownership)
+
+### Supports (`/api/supports`)
+- `POST /` - Create new support/subscription (requires auth)
+- `GET /my/supports` - List current user's supports (requires auth)
+- `GET /campaign/:campaignId` - List supports for a campaign
+- `POST /:id/pause` - Pause support (requires auth + ownership)
+- `POST /:id/resume` - Resume support (requires auth + ownership)
+- `POST /:id/cancel` - Cancel support (requires auth + ownership)
 
 ### Integrations (`/api/integrations`)
-- `POST /` - Create integration
-- `GET /` - List user integrations
-- `GET /:id` - Get integration details
-- `PUT /:id` - Update integration
-- `DELETE /:id` - Delete integration
-- `POST /:id/toggle` - Activate/deactivate
-- `GET /:id/members` - List members
-- `POST /:id/sync` - Trigger sync now
+- `POST /` - Create integration (requires auth)
+- `GET /` - List user integrations (requires auth)
+- `GET /telegram-link/:campaignId` - Get Telegram link for campaign (requires auth)
+- `GET /:id` - Get integration details (requires auth)
+- `PUT /:id` - Update integration (requires auth + ownership)
+- `DELETE /:id` - Delete integration (requires auth + ownership)
+- `POST /:id/activate` - Activate integration (requires auth + ownership)
+- `POST /:id/deactivate` - Deactivate integration (requires auth + ownership)
+- `POST /:id/regenerate-key` - Regenerate API key (requires auth + ownership)
 
 ### Webhooks
 - `POST /webhook/apoiase` - APOIA.se webhook (6 events)
@@ -211,9 +303,13 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 - Never expose sensitive data in error responses
 
 ### Authentication Flow
-- JWT tokens in Authorization header: `Bearer <token>`
-- Auth middleware in [backend/src/middleware/auth.ts](backend/src/middleware/auth.ts)
-- Frontend uses useAuth hook ([frontend/src/hooks/useAuth.tsx](frontend/src/hooks/useAuth.tsx))
+- **User Registration**: Users register via `/api/auth/register` with email, password, and name
+- **Password Security**: Passwords are hashed using bcrypt (10 rounds) before storing
+- **JWT Tokens**: Login returns JWT token in Authorization header format: `Bearer <token>`
+- **Token Storage**: Frontend stores token in localStorage, automatically included in all API requests
+- **Role System**: Users have roles array (`['admin', 'user']`), checked via `requireRole()` middleware
+- **Auth Middleware**: [backend/src/middleware/auth.ts](backend/src/middleware/auth.ts) - validates JWT and populates `req.user`
+- **Frontend Hook**: [frontend/src/hooks/useAuth.tsx](frontend/src/hooks/useAuth.tsx) - manages auth state and token
 
 ### API Key Generation
 - Integration API keys are base64-encoded random bytes (32 bytes)
@@ -285,7 +381,50 @@ Critical indexes for performance:
 - Webhook signature validation not implemented for APOIA.se
 - Test suite not implemented (Jest configured but no tests)
 - Email notification service not implemented
-- Dashboard metrics/charts not implemented
+- Payment integration not implemented (supports are created but payment flow is TODO)
+- Image upload service not implemented (currently using external URLs)
+- Profile page UI not fully implemented
+
+## Recent Updates (2025-10-12)
+
+### Major Changes
+1. **Authentication System Overhaul**
+   - Removed mock authentication, implemented real database-backed auth
+   - Added user registration endpoint (`POST /api/auth/register`)
+   - Passwords now properly hashed with bcrypt
+   - Changed role system from single `role` to `roles` array
+   - Updated all controllers to check `req.user.roles.includes()` instead of `req.user.role`
+
+2. **New Campaign System**
+   - Created complete Campaign model with reward levels
+   - Added campaignController and campaignService
+   - Implemented full CRUD: create, read, update, delete campaigns
+   - Campaign creation wizard with 3-step form (basic info, media, reward levels)
+   - Public campaign discovery page with categories and search
+   - Campaign detail pages with support flow placeholders
+
+3. **New Support System**
+   - Created Support model for user subscriptions
+   - Added supportController and supportService
+   - Track user supports with status (active, paused, cancelled)
+   - "My Supports" dashboard for users to manage subscriptions
+
+4. **Frontend Revamp**
+   - Removed old dashboard, built new modern UI
+   - Added Navbar and Footer components
+   - Created landing page with campaign showcase
+   - Built registration and improved login pages
+   - Fixed API routes: all endpoints now correctly use `/api` prefix
+
+5. **Database Schema Updates**
+   - Integration model: changed `campaignId` and `createdBy` from String to ObjectId references
+   - All models now use proper Mongoose relationships
+   - Added indexes for performance
+
+6. **Bug Fixes**
+   - Fixed frontend API calls missing `/api` prefix (was causing 404 errors)
+   - Fixed authentication middleware to work with roles array
+   - Fixed integration ownership checks to use ObjectId properly
 
 ## Troubleshooting
 
@@ -304,3 +443,4 @@ Critical indexes for performance:
 - [PROJECT_STATUS.md](PROJECT_STATUS.md) - Development progress and status
 - [GETTING_STARTED.md](GETTING_STARTED.md) - Quick start guide (5 minutes)
 - [COMMANDS.md](COMMANDS.md) - Comprehensive command reference
+- [DOCKER_MODES.md](DOCKER_MODES.md) - Docker development vs production modes

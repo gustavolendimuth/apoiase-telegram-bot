@@ -6,7 +6,7 @@ export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
     email: string;
-    role: 'maker' | 'supporter' | 'admin';
+    roles: Array<'admin' | 'user'>;
   };
 }
 
@@ -28,7 +28,7 @@ export const authenticateToken = (
     const decoded = jwt.verify(token, jwtSecret) as {
       id: string;
       email: string;
-      role: 'maker' | 'supporter' | 'admin';
+      roles: Array<'admin' | 'user'>;
     };
 
     req.user = decoded;
@@ -39,14 +39,17 @@ export const authenticateToken = (
   }
 };
 
-export const requireRole = (...roles: Array<'maker' | 'supporter' | 'admin'>) => {
+export const requireRole = (...roles: Array<'admin' | 'user'>) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
       res.status(401).json({ error: 'Não autenticado' });
       return;
     }
 
-    if (!roles.includes(req.user.role)) {
+    // Check if user has at least one of the required roles
+    const hasRequiredRole = roles.some(role => req.user!.roles.includes(role));
+
+    if (!hasRequiredRole) {
       res.status(403).json({ error: 'Permissão negada' });
       return;
     }

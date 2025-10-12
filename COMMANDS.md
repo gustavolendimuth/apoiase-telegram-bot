@@ -43,8 +43,28 @@ npm run build:frontend
 
 ## 🐳 Docker
 
+### Atalhos npm (Recomendado)
+
 ```bash
-# Iniciar tudo (MongoDB, Redis, Backend, Frontend)
+# MODO DESENVOLVIMENTO (com hot reload)
+npm run docker:dev          # Inicia todos os serviços em modo dev
+npm run docker:dev:logs     # Ver logs em tempo real
+
+# MODO PRODUÇÃO (build otimizado)
+npm run docker:prod         # Inicia todos os serviços em modo prod
+
+# GERENCIAMENTO
+npm run docker:down         # Para todos os containers
+npm run docker:clean        # Para e remove volumes (CUIDADO: apaga dados!)
+```
+
+### Comandos docker-compose diretos
+
+```bash
+# Modo desenvolvimento (hot reload)
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+# Modo produção
 docker-compose up -d
 
 # Iniciar apenas infraestrutura (MongoDB + Redis)
@@ -71,6 +91,8 @@ docker-compose restart backend
 # Ver status dos containers
 docker-compose ps
 ```
+
+**💡 Dica**: Prefira os atalhos npm (`npm run docker:dev`) para facilitar o desenvolvimento!
 
 ## 💾 MongoDB
 

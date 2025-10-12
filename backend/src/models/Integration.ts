@@ -2,14 +2,14 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IIntegration extends Document {
   _id: Types.ObjectId;
-  campaignId: string;
+  campaignId: Types.ObjectId; // Reference to Campaign
   telegramGroupId: string;
   telegramGroupType: 'group' | 'supergroup' | 'channel';
   telegramGroupTitle: string;
   apiKey: string;
   rewardLevels: string[]; // IDs dos níveis de recompensa que dão acesso
   isActive: boolean;
-  createdBy: string; // ID do fazedor
+  createdBy: Types.ObjectId; // Reference to User (maker)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,7 +17,8 @@ export interface IIntegration extends Document {
 const IntegrationSchema = new Schema<IIntegration>(
   {
     campaignId: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: 'Campaign',
       required: true,
       index: true,
     },
@@ -50,7 +51,8 @@ const IntegrationSchema = new Schema<IIntegration>(
       default: true,
     },
     createdBy: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: 'User',
       required: true,
     },
   },
