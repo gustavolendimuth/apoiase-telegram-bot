@@ -336,7 +336,7 @@ export class IntegrationAuthService {
       }
 
       // 6. Criar integração
-      const apiKey = await integrationService.generateApiKey();
+      const apiKey = integrationService.generateApiKey();
 
       const integration = await Integration.create({
         campaignId: campaign._id,

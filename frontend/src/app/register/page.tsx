@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { getApiUrl } from '@/lib/env';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -43,7 +44,7 @@ export default function RegisterPage() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`,
+        `${getApiUrl()}/api/auth/register`,
         {
           method: 'POST',
           headers: {

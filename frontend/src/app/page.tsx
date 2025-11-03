@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getApiUrl } from '@/lib/env';
 
 interface Campaign {
   _id: string;
@@ -53,7 +54,7 @@ export default function Home() {
       });
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/campaigns/all?${params}`
+        `${getApiUrl()}/api/campaigns/all?${params}`
       );
 
       if (response.ok) {

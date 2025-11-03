@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useAuth } from '@/hooks/useAuth';
 import api from '@/lib/api';
+import { getApiUrl } from '@/lib/env';
 
 interface RewardLevel {
   id: string;
@@ -53,7 +54,7 @@ export default function CampaignPage() {
     const fetchCampaign = async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/campaigns/slug/${params.slug}`
+          `${getApiUrl()}/api/campaigns/slug/${params.slug}`
         );
 
         if (!response.ok) {

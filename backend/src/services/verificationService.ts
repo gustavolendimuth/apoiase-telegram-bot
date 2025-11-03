@@ -55,7 +55,7 @@ export class VerificationService {
       const isPaymentOk = support.status === 'active'; // Se status for active, pagamento está ok
 
       const supporterData: SupporterData = {
-        id: support._id.toString(),
+        id: (support._id as any).toString(),
         email: user.email,
         campaignId: campaignId,
         rewardLevel: support.rewardLevelId || 'basic',

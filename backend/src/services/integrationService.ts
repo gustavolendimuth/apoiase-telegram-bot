@@ -13,7 +13,7 @@ export class IntegrationService {
   /**
    * Gera uma chave API única para a integração
    */
-  private generateApiKey(): string {
+  public generateApiKey(): string {
     return crypto.randomBytes(32).toString('base64');
   }
 

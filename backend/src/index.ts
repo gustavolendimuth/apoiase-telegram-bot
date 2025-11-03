@@ -14,6 +14,7 @@ import webhookRoutes from './routes/webhookRoutes';
 import campaignRoutes from './routes/campaignRoutes';
 import supportRoutes from './routes/supportRoutes';
 import { setupRecurringJobs } from './jobs/syncMembers';
+import { getFrontendUrl } from './utils/env';
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -24,7 +25,7 @@ const PORT = process.env.PORT || 3001;
 // Middlewares de segurança
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: getFrontendUrl(),
   credentials: true,
 }));
 

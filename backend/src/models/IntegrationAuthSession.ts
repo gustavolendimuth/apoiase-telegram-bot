@@ -21,6 +21,11 @@ export interface IIntegrationAuthSession extends Document {
   expiresAt: Date;
   createdAt: Date;
   updatedAt: Date;
+  // Methods
+  isValid(): boolean;
+  markExpired(): Promise<IIntegrationAuthSession>;
+  markCompleted(): Promise<IIntegrationAuthSession>;
+  setError(message: string): Promise<IIntegrationAuthSession>;
 }
 
 const IntegrationAuthSessionSchema = new Schema<IIntegrationAuthSession>(

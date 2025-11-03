@@ -104,7 +104,7 @@ export class TelegramGroupDiscoveryService {
         id: groupId,
         title: chat.title || 'Grupo sem título',
         type: chat.type,
-        memberCount: 'members_count' in chat ? chat.members_count : undefined,
+        memberCount: 'members_count' in chat ? (chat.members_count as number | undefined) : undefined,
         canPostMessages,
         canManageChat,
         canInviteUsers,

@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
+import { getApiUrl } from '@/lib/env';
 
 interface Campaign {
   _id: string;
@@ -74,7 +75,7 @@ export default function CampaignsPage() {
       });
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/campaigns/all?${params}`
+        `${getApiUrl()}/api/campaigns/all?${params}`
       );
 
       if (!response.ok) {
@@ -100,7 +101,7 @@ export default function CampaignsPage() {
     setLoading(true);
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/campaigns/search?q=${encodeURIComponent(
+        `${getApiUrl()}/api/campaigns/search?q=${encodeURIComponent(
           searchQuery
         )}`
       );
