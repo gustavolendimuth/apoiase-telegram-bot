@@ -30,7 +30,7 @@ COPY backend/tsconfig.json ./backend/
 COPY shared/package*.json ./shared/
 
 # Instalar apenas dependências de produção
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 # Copiar build do estágio anterior
 COPY --from=builder /app/backend/dist ./backend/dist

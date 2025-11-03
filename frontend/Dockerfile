@@ -29,7 +29,7 @@ COPY frontend/package*.json ./frontend/
 COPY shared/package*.json ./shared/
 
 # Instalar apenas dependências de produção
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 # Copiar build do estágio anterior
 COPY --from=builder /app/frontend/.next ./frontend/.next
