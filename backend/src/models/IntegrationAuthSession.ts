@@ -88,7 +88,7 @@ const IntegrationAuthSessionSchema = new Schema<IIntegrationAuthSession>(
     expiresAt: {
       type: Date,
       required: true,
-      index: true,
+      // index será criado abaixo via schema.index() para TTL
     },
   },
   {

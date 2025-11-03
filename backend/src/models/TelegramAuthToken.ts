@@ -43,7 +43,7 @@ const TelegramAuthTokenSchema: Schema = new Schema(
     expiresAt: {
       type: Date,
       required: true,
-      index: true,
+      // index será criado abaixo via schema.index() no índice composto
     },
     usedAt: {
       type: Date,

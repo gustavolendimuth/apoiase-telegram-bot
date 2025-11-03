@@ -132,7 +132,7 @@ const campaignSchema = new Schema<ICampaign>(
 );
 
 // Indexes
-campaignSchema.index({ slug: 1 });
+// slug já tem índice único através de unique: true, não precisa de index adicional
 campaignSchema.index({ makerId: 1 });
 campaignSchema.index({ status: 1 });
 campaignSchema.index({ category: 1 });
