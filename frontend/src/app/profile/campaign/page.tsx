@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useIntegrations } from "@/hooks/useIntegrations";
 import { Button, Card, CardHeader, CardTitle, CardContent, Badge, Modal } from "@/components/ui";
@@ -31,7 +31,7 @@ interface RewardLevel {
   benefits: string[];
 }
 
-export default function IntegracoesPage() {
+function IntegracoesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const campaignId = searchParams.get('campaignId');
@@ -125,6 +125,11 @@ export default function IntegracoesPage() {
   };
 
   const handleCreateIntegration = async () => {
+    if (!campaignId) {
+      setError('ID da campanha não fornecido');
+      return;
+    }
+
     if (!formData.telegramGroupId || formData.rewardLevels.length === 0) {
       return;
     }
@@ -422,9 +427,8 @@ export default function IntegracoesPage() {
       </div>
 
       {/* Create Integration Modal */}
-      {showCreateModal && (
-        <Modal onClose={() => setShowCreateModal(false)}>
-          <div className="p-6">
+      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)}>
+        <div className="p-6">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
               Conectar grupo do Telegram
             </h3>
@@ -500,7 +504,25 @@ export default function IntegracoesPage() {
             </div>
           </div>
         </Modal>
-      )}
     </div>
+  );
+}
+
+export default function IntegracoesPage() {
+  return (
+    <Suspense fallback={
+      <div className="bg-white min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#ed5544] mx-auto"></div>
+              <p className="mt-4 text-gray-600">Carregando...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <IntegracoesPageContent />
+    </Suspense>
   );
 }

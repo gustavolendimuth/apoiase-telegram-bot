@@ -84,6 +84,6 @@ const MemberSchema = new Schema<IMember>(
 MemberSchema.index({ integrationId: 1, status: 1 });
 MemberSchema.index({ supporterEmail: 1, integrationId: 1 });
 MemberSchema.index({ telegramUserId: 1, integrationId: 1 });
-MemberSchema.index({ inviteToken: 1 });
+MemberSchema.index({ inviteToken: 1 }, { sparse: true });
 
 export default mongoose.model<IMember>('Member', MemberSchema);

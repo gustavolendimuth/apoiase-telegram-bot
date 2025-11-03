@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/Button';
@@ -23,7 +23,7 @@ interface SessionData {
   redirectUri?: string;
 }
 
-export default function IntegrationAuthorizePage() {
+function IntegrationAuthorizePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
@@ -388,5 +388,20 @@ function CompleteIntegration({
         </Button>
       </div>
     </div>
+  );
+}
+
+export default function IntegrationAuthorizePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loading />
+          <p className="mt-4 text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    }>
+      <IntegrationAuthorizePageContent />
+    </Suspense>
   );
 }
