@@ -1,22 +1,128 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useIntegrations } from "@/hooks/useIntegrations";
 import { Button, Card, CardHeader, CardTitle, CardContent, Badge, Modal } from "@/components/ui";
+import api from "@/lib/api";
+
+interface Campaign {
+  _id: string;
+  title: string;
+  slug: string;
+  description: string;
+  goal: number;
+  raised: number;
+  currency: string;
+  category: string;
+  imageUrl: string;
+  supporters: number;
+  status: 'draft' | 'active' | 'paused' | 'completed';
+  rewardLevels: RewardLevel[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface RewardLevel {
+  id: string;
+  title: string;
+  amount: number;
+  description: string;
+  benefits: string[];
+}
 
 export default function IntegracoesPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const campaignId = searchParams.get('campaignId');
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState<any>(null);
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [loadingCampaign, setLoadingCampaign] = useState(true);
+  const [error, setError] = useState('');
 
-  // Mock campaignId - em produção virá do contexto de autenticação
-  const campaignId = "mock-campaign-id";
-  const { integrations, loading, createIntegration, updateIntegration, deleteIntegration, toggleIntegration } = useIntegrations(campaignId);
+  const { integrations, loading, createIntegration, updateIntegration, deleteIntegration, toggleIntegration } = useIntegrations(campaignId || '');
 
   const [formData, setFormData] = useState({
     telegramGroupId: "",
     telegramGroupTitle: "",
     rewardLevels: [] as string[],
   });
+
+  useEffect(() => {
+    if (!campaignId) {
+      setError('ID da campanha não fornecido');
+      setLoadingCampaign(false);
+      return;
+    }
+
+    const fetchCampaign = async () => {
+      try {
+        setLoadingCampaign(true);
+        const response = await api.get(`/api/campaigns/${campaignId}`);
+        setCampaign(response.data);
+        setError('');
+      } catch (err: any) {
+        console.error('Error fetching campaign:', err);
+        setError(err.response?.data?.error || 'Erro ao carregar campanha');
+      } finally {
+        setLoadingCampaign(false);
+      }
+    };
+
+    fetchCampaign();
+
+    // Verificar se voltou do callback de integração
+    const status = searchParams.get('status');
+    const integrationId = searchParams.get('integration_id');
+    const errorParam = searchParams.get('error');
+
+    if (status === 'success' && integrationId) {
+      // Mostrar mensagem de sucesso (você pode adicionar um toast/notificação aqui)
+      console.log('Integração Telegram conectada com sucesso!', integrationId);
+      // Limpar URL
+      window.history.replaceState({}, '', `/profile/campaign?campaignId=${campaignId}`);
+    } else if (errorParam) {
+      setError(decodeURIComponent(errorParam));
+      // Limpar URL
+      window.history.replaceState({}, '', `/profile/campaign?campaignId=${campaignId}`);
+    }
+  }, [campaignId]);
+
+  const getCategoryLabel = (category: string) => {
+    const categoryMap: Record<string, string> = {
+      art: 'Arte',
+      music: 'Música',
+      technology: 'Tecnologia',
+      education: 'Educação',
+      social: 'Social',
+      games: 'Games',
+      podcasts: 'Podcasts',
+      videos: 'Vídeos',
+      other: 'Outros',
+    };
+    return categoryMap[category] || category;
+  };
+
+  const handleConnectTelegram = async () => {
+    if (!campaign) return;
+
+    try {
+      setError('');
+
+      // Chamar endpoint do APOIA.se que inicia o fluxo OAuth
+      const response = await api.post(`/api/campaigns/${campaign.slug}/integrations/telegram`);
+
+      if (response.data.success && response.data.redirectUrl) {
+        // Redirecionar para serviço de integração
+        window.location.href = response.data.redirectUrl;
+      }
+    } catch (err: any) {
+      console.error('Erro ao conectar Telegram:', err);
+      setError(err.response?.data?.error || 'Erro ao iniciar integração');
+    }
+  };
 
   const handleCreateIntegration = async () => {
     if (!formData.telegramGroupId || formData.rewardLevels.length === 0) {
@@ -37,6 +143,46 @@ export default function IntegracoesPage() {
     await toggleIntegration(id, !currentStatus);
   };
 
+  if (loadingCampaign) {
+    return (
+      <div className="bg-white min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#ed5544] mx-auto"></div>
+              <p className="mt-4 text-gray-600">Carregando campanha...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !campaign) {
+    return (
+      <div className="bg-white min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center">
+            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">
+              {error || 'Campanha não encontrada'}
+            </h3>
+            <button
+              onClick={() => router.push('/minhas-campanhas')}
+              className="px-6 py-3 bg-[#ed5544] text-white rounded-lg hover:bg-[#d64435] transition-colors font-semibold"
+            >
+              Voltar para minhas campanhas
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white min-h-screen">
       {/* Campaign Header */}
@@ -45,8 +191,12 @@ export default function IntegracoesPage() {
           <div className="flex items-start gap-4">
             {/* Campaign Avatar */}
             <div className="flex-shrink-0">
-              <div className="w-20 h-20 bg-gradient-to-br from-amber-700 to-amber-900 rounded-lg flex items-center justify-center overflow-hidden">
-                <div className="text-white text-3xl font-bold">☕</div>
+              <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                {campaign.imageUrl ? (
+                  <img src={campaign.imageUrl} alt={campaign.title} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="text-gray-400 text-3xl font-bold">📊</div>
+                )}
               </div>
             </div>
 
@@ -54,23 +204,23 @@ export default function IntegracoesPage() {
             <div className="flex-grow min-w-0">
               <div className="flex items-start gap-2 mb-2">
                 <h1 className="text-3xl font-bold text-gray-900">
-                  Café, código e impacto social
+                  {campaign.title}
                 </h1>
-                <button className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+                <button
+                  onClick={() => router.push(`/campanha/${campaign.slug}`)}
+                  className="text-gray-400 hover:text-gray-600 flex-shrink-0"
+                >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
                 </button>
               </div>
               <p className="text-gray-600 text-base mb-3">
-                "Transformo café em código – e código em impacto social e ambiental"
+                {campaign.description}
               </p>
               <div className="flex gap-2">
-                <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
-                  Socioambiental
-                </span>
                 <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
-                  Empreendedorismo
+                  {getCategoryLabel(campaign.category)}
                 </span>
               </div>
             </div>
@@ -190,7 +340,7 @@ export default function IntegracoesPage() {
                 {/* Connect Button */}
                 <div className="flex-shrink-0">
                   <button
-                    onClick={() => setShowCreateModal(true)}
+                    onClick={handleConnectTelegram}
                     className="px-5 py-2 bg-[#ed5544] hover:bg-[#d64435] text-white rounded font-medium text-sm transition-colors"
                   >
                     Conectar
@@ -303,25 +453,33 @@ export default function IntegracoesPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Níveis de recompensa com acesso
                 </label>
-                <div className="space-y-2">
-                  {["Nível 1 - R$ 10/mês", "Nível 2 - R$ 25/mês", "Nível 3 - R$ 50/mês"].map((level) => (
-                    <label key={level} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={formData.rewardLevels.includes(level)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormData({ ...formData, rewardLevels: [...formData.rewardLevels, level] });
-                          } else {
-                            setFormData({ ...formData, rewardLevels: formData.rewardLevels.filter((l) => l !== level) });
-                          }
-                        }}
-                        className="rounded border-gray-300 text-[#ed5544] focus:ring-[#ed5544]"
-                      />
-                      <span className="text-gray-700">{level}</span>
-                    </label>
-                  ))}
-                </div>
+                {campaign.rewardLevels && campaign.rewardLevels.length > 0 ? (
+                  <div className="space-y-2">
+                    {campaign.rewardLevels.map((level) => (
+                      <label key={level.id} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={formData.rewardLevels.includes(level.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({ ...formData, rewardLevels: [...formData.rewardLevels, level.id] });
+                            } else {
+                              setFormData({ ...formData, rewardLevels: formData.rewardLevels.filter((l) => l !== level.id) });
+                            }
+                          }}
+                          className="rounded border-gray-300 text-[#ed5544] focus:ring-[#ed5544]"
+                        />
+                        <span className="text-gray-700">
+                          {level.title} - {campaign.currency} {level.amount.toLocaleString()}/mês
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-gray-500 text-sm py-2">
+                    Nenhum nível de recompensa configurado. Configure os níveis de recompensa primeiro na aba "Recompensas".
+                  </div>
+                )}
               </div>
             </div>
 

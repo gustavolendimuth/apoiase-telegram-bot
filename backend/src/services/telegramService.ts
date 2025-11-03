@@ -38,11 +38,32 @@ export class TelegramService {
   private setupCommands(): void {
     if (!this.bot) return;
 
-    // Comando /start
+    // Comando /start (com suporte a startgroup para autorização)
     this.bot.command('start', async (ctx: Context) => {
       try {
         const userName = ctx.from?.first_name || 'Apoiador';
+        const message = ctx.message;
 
+        // Verificar se é um startgroup (autorização de integração)
+        if (message && 'text' in message) {
+          const commandText = message.text;
+          const match = commandText.match(/\/start\s+(.+)/);
+
+          if (match) {
+            const param = match[1];
+
+            // Se começa com "startgroup=", é uma autorização
+            if (param.includes('=')) {
+              const [action, token] = param.split('=');
+              if (action === 'startgroup' && token) {
+                await this.handleTelegramAuthorization(ctx, token);
+                return;
+              }
+            }
+          }
+        }
+
+        // Mensagem padrão de /start
         await ctx.reply(
           `Olá, ${userName}! 👋\n\n` +
           `Bem-vindo ao bot de integração APOIA.se + Telegram.\n\n` +
@@ -100,10 +121,97 @@ export class TelegramService {
   }
 
   /**
+   * Handler para autorização do Telegram via deep link
+   */
+  private async handleTelegramAuthorization(ctx: Context, token: string): Promise<void> {
+    try {
+      const chatId = ctx.chat?.id;
+      if (!chatId) {
+        await ctx.reply('❌ Erro ao identificar o grupo.');
+        return;
+      }
+
+      logger.info('Processando autorização do Telegram:', {
+        token,
+        chatId,
+        chatType: ctx.chat?.type,
+      });
+
+      // Importação dinâmica para evitar dependência circular
+      const { default: integrationService } = await import('./integrationService');
+
+      // Processar autorização
+      const integration = await integrationService.processTelegramAuthorization(
+        token,
+        chatId.toString()
+      );
+
+      // Mensagem de sucesso
+      await ctx.reply(
+        `✅ *Integração configurada com sucesso!*\n\n` +
+        `Este grupo agora está integrado com a campanha no APOIA.se.\n\n` +
+        `Os apoiadores com os níveis de recompensa configurados poderão acessar este grupo automaticamente.\n\n` +
+        `Você pode gerenciar esta integração no painel do APOIA.se.`,
+        { parse_mode: 'Markdown' }
+      );
+
+      logger.info('Integração criada via autorização:', {
+        token,
+        integrationId: integration._id,
+        groupId: chatId,
+      });
+    } catch (error: any) {
+      logger.error('Erro ao processar autorização:', error);
+
+      let errorMessage = '❌ Erro ao configurar integração.\n\n';
+
+      if (error.message.includes('já existe')) {
+        errorMessage += 'Este grupo já possui uma integração configurada.';
+      } else if (error.message.includes('expirado')) {
+        errorMessage += 'O link de autorização expirou. Por favor, gere um novo link no painel.';
+      } else if (error.message.includes('inválido')) {
+        errorMessage += 'Link de autorização inválido ou já utilizado.';
+      } else {
+        errorMessage += 'Por favor, tente novamente ou entre em contato com o suporte.';
+      }
+
+      await ctx.reply(errorMessage);
+    }
+  }
+
+  /**
    * Configura handlers de eventos
    */
   private setupHandlers(): void {
     if (!this.bot) return;
+
+    // Handler para quando o bot é adicionado a um grupo/canal
+    this.bot.on('my_chat_member', async (ctx: Context) => {
+      try {
+        const update = ctx.update;
+        if (!('my_chat_member' in update)) return;
+
+        const { new_chat_member, old_chat_member, chat } = update.my_chat_member;
+
+        // Verificar se o bot foi adicionado (status mudou para member ou administrator)
+        const wasNotMember = ['left', 'kicked'].includes(old_chat_member.status);
+        const isNowMember = ['member', 'administrator'].includes(new_chat_member.status);
+
+        if (wasNotMember && isNowMember) {
+          logger.info('Bot adicionado a um novo grupo:', {
+            chatId: chat.id,
+            chatTitle: 'title' in chat ? chat.title : 'N/A',
+            chatType: chat.type,
+          });
+
+          // Verificar se há um parâmetro de autorização pendente
+          // Nota: O Telegram envia o parâmetro via comando /start depois de adicionar ao grupo
+          // Então a autorização será processada no handler do /start
+        }
+      } catch (error) {
+        logger.error('Erro ao processar my_chat_member:', error);
+      }
+    });
 
     // Handler para novos membros no grupo
     this.bot.on('new_chat_members', async (ctx: Context) => {

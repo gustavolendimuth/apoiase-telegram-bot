@@ -281,6 +281,8 @@ Quando alguém apoiar sua campanha:
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - Documentação da arquitetura
 - **[COMMANDS.md](COMMANDS.md)** - Comandos úteis
 - **[DOCKER_MODES.md](DOCKER_MODES.md)** - Modos desenvolvimento vs produção
+- **[INTEGRATION_FLOW.md](INTEGRATION_FLOW.md)** - Fluxo de integração OAuth com APOIA.se
+- **[APOIA_SE_INTEGRATION_GUIDE.md](APOIA_SE_INTEGRATION_GUIDE.md)** - Guia de integração para equipe APOIA.se
 
 ### Endpoints da API
 
@@ -466,31 +468,34 @@ Distribuído sob a licença MIT. Veja [LICENSE](LICENSE) para mais informações
 
 ---
 
-## 📊 Estatísticas do Projeto (Atualizadas 2025-10-12)
+## 📊 Estatísticas do Projeto (Atualizadas 2025-11-03)
 
-- **60+ arquivos** TypeScript/TSX criados
-- **~8.000+ linhas** de código (excluindo dependências)
-- **28 endpoints** de API REST
-- **9 componentes** UI React reutilizáveis
+- **70+ arquivos** TypeScript/TSX criados
+- **~10.000+ linhas** de código (excluindo dependências)
+- **35+ endpoints** de API REST
+- **10 componentes** UI React reutilizáveis
 - **2 custom hooks** (useAuth, useIntegrations)
-- **10+ páginas** (Home, Login, Register, Campaigns, Campaign Detail, My Campaigns, Create Campaign, My Supports, Profile)
+- **11+ páginas** (Home, Login, Register, Campaigns, Campaign Detail, My Campaigns, Create Campaign, My Supports, Profile, Integration Authorize, Campaign Integrations)
 - **6 eventos** de webhook processados
-- **6 Models** MongoDB (Integration, Member, EventLog, Campaign, Support, User)
-- **5 Controllers** (auth, integration, webhook, campaign, support)
-- **7 Services** (auth, integration, member, telegram, verification, campaign, support)
+- **8 Models** MongoDB (Integration, Member, EventLog, Campaign, Support, User, IntegrationAuthSession, TelegramAuthToken)
+- **6 Controllers** (auth, integration, integrationAuth, webhook, campaign, support)
+- **10 Services** (auth, integration, integrationAuth, member, telegram, telegramGroupDiscovery, verification, campaign, support, apoiaseApi)
 - **1 Job** com 2 tarefas recorrentes (sync diário + verificação 6h)
 - **100% TypeScript** (type-safe)
 
-### Funcionalidades Implementadas Recentemente
+### Funcionalidades Implementadas Recentemente (Novembro 2025)
+- ✅ **Integração OAuth-like com APOIA.se** - Fluxo completo de autorização
+- ✅ **Telegram Login Widget** - Autenticação com validação de hash HMAC-SHA256
+- ✅ **Auto-descoberta de grupos Telegram** - Lista automática de grupos onde bot é admin
+- ✅ **API real do APOIA.se** - Verificação de status de pagamento em tempo real
+- ✅ **Página de autorização** - UI para conectar campanhas ao Telegram
+- ✅ **Sessões temporárias** - Gerenciamento seguro do fluxo OAuth (30min expiry)
 - ✅ Sistema completo de campanhas (CRUD)
 - ✅ Gerenciamento de apoios/assinaturas
 - ✅ Autenticação com banco de dados real (bcrypt)
-- ✅ Registro de novos usuários
 - ✅ Landing page moderna com showcase de campanhas
 - ✅ Wizard de criação de campanhas (3 etapas)
-- ✅ Dashboard "Minhas Campanhas"
-- ✅ Dashboard "Meus Apoios"
-- ✅ Navbar e Footer globais
+- ✅ Dashboards (Minhas Campanhas, Meus Apoios)
 
 ---
 

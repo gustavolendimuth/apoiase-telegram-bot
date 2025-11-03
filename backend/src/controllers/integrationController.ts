@@ -438,6 +438,102 @@ export class IntegrationController {
       });
     }
   }
+
+  /**
+   * Iniciar autorização do Telegram (similar ao OAuth)
+   * POST /api/integrations/telegram/authorize
+   */
+  async startTelegramAuth(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { campaignId, rewardLevels } = req.body;
+
+      if (!campaignId) {
+        res.status(400).json({
+          error: 'campaignId é obrigatório',
+        });
+        return;
+      }
+
+      if (!req.user) {
+        res.status(401).json({ error: 'Não autenticado' });
+        return;
+      }
+
+      const result = await integrationService.startTelegramAuthorization(
+        campaignId,
+        req.user.id,
+        rewardLevels || []
+      );
+
+      logger.info('Autorização do Telegram iniciada:', {
+        token: result.token,
+        campaignId,
+        userId: req.user.id,
+      });
+
+      res.json({
+        token: result.token,
+        authUrl: result.authUrl,
+        expiresAt: result.expiresAt,
+      });
+    } catch (error: any) {
+      logger.error('Erro ao iniciar autorização do Telegram:', error);
+      res.status(500).json({
+        error: error.message || 'Erro ao iniciar autorização',
+      });
+    }
+  }
+
+  /**
+   * Verificar status da autorização do Telegram
+   * GET /api/integrations/telegram/authorize/:token
+   */
+  async checkTelegramAuth(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { token } = req.params;
+
+      if (!req.user) {
+        res.status(401).json({ error: 'Não autenticado' });
+        return;
+      }
+
+      const result = await integrationService.checkTelegramAuthorizationStatus(token);
+
+      res.json(result);
+    } catch (error: any) {
+      logger.error('Erro ao verificar autorização do Telegram:', error);
+      res.status(500).json({
+        error: error.message || 'Erro ao verificar autorização',
+      });
+    }
+  }
+
+  /**
+   * Buscar informações de integração para apoiadores
+   * GET /api/integrations/supporter/:campaignId
+   */
+  async getIntegrationForSupporter(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { campaignId } = req.params;
+
+      if (!req.user) {
+        res.status(401).json({ error: 'Não autenticado' });
+        return;
+      }
+
+      const info = await integrationService.getIntegrationInfoForSupporter(
+        campaignId,
+        req.user.email
+      );
+
+      res.json(info);
+    } catch (error: any) {
+      logger.error('Erro ao buscar informações de integração para apoiador:', error);
+      res.status(500).json({
+        error: error.message || 'Erro ao buscar informações de integração',
+      });
+    }
+  }
 }
 
 export default new IntegrationController();

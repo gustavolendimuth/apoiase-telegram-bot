@@ -2,21 +2,45 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ IMPORTANT: Keep This File Updated
+
+**ALWAYS update this file (CLAUDE.md) after making significant changes to the project**, including:
+- Adding new models, controllers, services, or routes
+- Creating new API endpoints
+- Implementing new features or workflows
+- Changing project structure or architecture
+- Updating dependencies or tech stack
+- Adding new environment variables
+- Modifying key flows or business logic
+
+Update the relevant sections:
+- **Project Stats** - Update file counts, endpoints, components
+- **Backend/Frontend Structure** - Add new files/directories
+- **Data Models** - Document new models or schema changes
+- **Key Flows** - Add or update workflow descriptions
+- **API Endpoints** - Document new or changed endpoints
+- **Environment Variables** - Add new required variables
+- **Recent Updates** - Add a dated entry describing the changes
+
+This ensures the documentation stays current and helpful for future development sessions.
+
+---
+
 ## Project Overview
 
 APOIA.se Telegram Bot - An integration system between APOIA.se (crowdfunding platform) and Telegram that automates access control to exclusive groups/channels based on supporter payment status. The system handles automatic verification, member synchronization, and removal of inactive supporters.
 
 **Status**: ✅ MVP Complete (Phases 1-3 done, Deploy pending)
 
-**Project Stats** (Updated 2025-10-12):
-- 60+ TypeScript/TSX files (~8,000+ lines of code)
-- 28 REST API endpoints
-- 6 Models (Integration, Member, EventLog, Campaign, Support, User)
-- 5 Controllers (auth, integration, webhook, campaign, support)
-- 7 Services (auth, integration, member, telegram, verification, campaign, support)
-- 9 UI Components (Button, Input, Card, Badge, Modal, Toast, Loading, Navbar, Footer)
+**Project Stats** (Updated 2025-11-03):
+- 70+ TypeScript/TSX files (~10,000+ lines of code)
+- 35+ REST API endpoints
+- 8 Models (Integration, Member, EventLog, Campaign, Support, User, IntegrationAuthSession, TelegramAuthToken)
+- 6 Controllers (auth, integration, integrationAuth, webhook, campaign, support)
+- 10 Services (auth, integration, integrationAuth, member, telegram, telegramGroupDiscovery, verification, campaign, support, apoiaseApi)
+- 10 UI Components (Button, Input, Card, Badge, Modal, Toast, Loading, Navbar, Footer, TelegramGroupSelector)
 - 2 Custom Hooks (useAuth, useIntegrations)
-- 10+ Pages (Home, Login, Register, Campaigns, Campaign Detail, My Campaigns, Create Campaign, My Supports, Profile)
+- 11+ Pages (Home, Login, Register, Campaigns, Campaign Detail, My Campaigns, Create Campaign, My Supports, Profile, Integration Authorize, Campaign Integrations)
 
 ## Development Commands
 
@@ -122,29 +146,37 @@ apoiase-telegram-bot/
 backend/src/
 ├── config/            # Database, Redis, Logger
 ├── models/            # Mongoose models
-│   ├── Integration.ts # Telegram integrations
-│   ├── Member.ts      # Group members
-│   ├── EventLog.ts    # Audit logs
-│   ├── Campaign.ts    # Crowdfunding campaigns
-│   ├── Support.ts     # User supports/subscriptions
-│   └── User.ts        # User accounts
+│   ├── Integration.ts             # Telegram integrations
+│   ├── Member.ts                  # Group members
+│   ├── EventLog.ts                # Audit logs
+│   ├── Campaign.ts                # Crowdfunding campaigns
+│   ├── Support.ts                 # User supports/subscriptions
+│   ├── User.ts                    # User accounts
+│   ├── IntegrationAuthSession.ts  # OAuth-like auth sessions (temp)
+│   └── TelegramAuthToken.ts       # Telegram auth tokens
 ├── services/          # Business logic
-│   ├── integrationService.ts  # CRUD, API key generation, Telegram links
-│   ├── memberService.ts       # Member management, invite links
-│   ├── verificationService.ts # APOIA.se API verification
-│   ├── telegramService.ts     # Bot logic, commands
-│   ├── authService.ts         # Authentication, JWT, user registration
-│   ├── campaignService.ts     # Campaign CRUD operations
-│   └── supportService.ts      # Support management
+│   ├── integrationService.ts           # CRUD, API key generation
+│   ├── integrationAuthService.ts       # OAuth-like authorization flow
+│   ├── memberService.ts                # Member management, invite links
+│   ├── verificationService.ts          # APOIA.se API verification (real)
+│   ├── telegramService.ts              # Bot logic, commands
+│   ├── telegramGroupDiscoveryService.ts # Auto-discover Telegram groups
+│   ├── apoiaseApiService.ts            # APOIA.se API client
+│   ├── authService.ts                  # Authentication, JWT, user registration
+│   ├── campaignService.ts              # Campaign CRUD operations
+│   └── supportService.ts               # Support management
 ├── controllers/       # REST controllers
-│   ├── authController.ts      # Login, register, logout
-│   ├── integrationController.ts # Integrations CRUD
-│   ├── webhookController.ts   # APOIA.se & Telegram webhooks
-│   ├── campaignController.ts  # Campaigns CRUD
-│   └── supportController.ts   # Supports CRUD
+│   ├── authController.ts           # Login, register, logout
+│   ├── integrationController.ts    # Integrations CRUD
+│   ├── integrationAuthController.ts # OAuth-like authorization endpoints
+│   ├── webhookController.ts        # APOIA.se & Telegram webhooks
+│   ├── campaignController.ts       # Campaigns CRUD
+│   └── supportController.ts        # Supports CRUD
 ├── routes/            # Express routes
 │   ├── authRoutes.ts
 │   ├── integrationRoutes.ts
+│   ├── integrationAuthRoutes.ts      # Authorization flow routes
+│   ├── apoiaseIntegrationRoutes.ts   # APOIA.se-specific integration routes
 │   ├── webhookRoutes.ts
 │   ├── campaignRoutes.ts
 │   └── supportRoutes.ts
@@ -158,18 +190,20 @@ backend/src/
 ```
 frontend/src/
 ├── app/              # Next.js App Router pages
-│   ├── page.tsx      # Landing page (campaigns showcase)
-│   ├── login/        # Login page
-│   ├── register/     # Registration page
-│   ├── campanhas/    # All campaigns list
-│   ├── campanha/[slug]/ # Campaign detail page
-│   ├── criar-campanha/  # Create campaign wizard
-│   ├── minhas-campanhas/ # My campaigns dashboard
-│   ├── meus-apoios/  # My supports/subscriptions
-│   ├── profile/      # User profile
-│   └── layout.tsx    # Root layout with Navbar & Footer
+│   ├── page.tsx              # Landing page (campaigns showcase)
+│   ├── login/                # Login page
+│   ├── register/             # Registration page
+│   ├── campanhas/            # All campaigns list
+│   ├── campanha/[slug]/      # Campaign detail page
+│   ├── criar-campanha/       # Create campaign wizard
+│   ├── minhas-campanhas/     # My campaigns dashboard
+│   ├── meus-apoios/          # My supports/subscriptions
+│   ├── profile/              # User profile
+│   ├── campaigns/[slug]/integrations/ # Campaign integrations management
+│   ├── integration/authorize/ # OAuth-like authorization page
+│   └── layout.tsx            # Root layout with Navbar & Footer
 ├── components/
-│   ├── ui/           # Reusable UI components
+│   ├── ui/                    # Reusable UI components
 │   │   ├── Button.tsx
 │   │   ├── Input.tsx
 │   │   ├── Card.tsx
@@ -177,8 +211,9 @@ frontend/src/
 │   │   ├── Modal.tsx
 │   │   ├── Toast.tsx
 │   │   └── Loading.tsx
-│   ├── Navbar.tsx    # Global navigation bar
-│   └── Footer.tsx    # Global footer
+│   ├── Navbar.tsx             # Global navigation bar
+│   ├── Footer.tsx             # Global footer
+│   └── TelegramGroupSelector.tsx # Telegram group selection component
 ├── hooks/            # Custom hooks (useAuth, useIntegrations)
 ├── lib/api.ts        # Axios API client with interceptors
 └── styles/globals.css # TailwindCSS styles
@@ -213,12 +248,31 @@ frontend/src/
 **EventLog** (audit trail)
 - eventType, integrationId, memberId, metadata
 
+**IntegrationAuthSession** (temporary OAuth-like sessions)
+- stateToken (unique, 30min expiry), campaignSlug, apiKey, bearerToken
+- telegramUserId, telegramUsername, telegramGroupId, telegramGroupTitle
+- status: pending | telegram_auth_complete | group_selected | completed | expired | cancelled
+- Used for OAuth-like flow between APOIA.se and this service
+
+**TelegramAuthToken** (stores validated Telegram auth data)
+- userId, username, firstName, photoUrl, authDate, hash
+- Validated using HMAC-SHA256 with bot token
+
 ### Key Flows
 
-1. **Create Integration**: Maker links campaign → validates bot permissions → generates API key
-2. **New Supporter**: APOIA.se webhook → creates member → generates invite link (24h)
-3. **Verification**: User joins → bot requests email → verifies with APOIA.se API → grants/denies access
-4. **Daily Sync**: Cron job (02:00) → checks all members → sends warnings (48h) → removes inactive (7 days)
+1. **OAuth-like Integration (APOIA.se → Telegram)**:
+   - Maker clicks "Connect Telegram" on APOIA.se → redirects to our service with temp credentials
+   - User authenticates with Telegram Login Widget → validates hash
+   - System auto-discovers Telegram groups where bot is admin → user selects group
+   - Integration created → redirects back to APOIA.se with success status
+
+2. **Create Integration (Legacy)**: Maker links campaign → validates bot permissions → generates API key
+
+3. **New Supporter**: APOIA.se webhook → creates member → generates invite link (24h)
+
+4. **Verification**: User joins → bot requests email → verifies with APOIA.se API (real) → grants/denies access
+
+5. **Daily Sync**: Cron job (02:00) → checks all members → sends warnings (48h) → removes inactive (7 days)
 
 ## API Endpoints
 
@@ -258,6 +312,22 @@ frontend/src/
 - `POST /:id/deactivate` - Deactivate integration (requires auth + ownership)
 - `POST /:id/regenerate-key` - Regenerate API key (requires auth + ownership)
 
+### Integration Authorization (`/api/integration`) - OAuth-like Flow
+- `GET /authorize` - Initiate authorization flow (accepts: campaign_slug, api_key, bearer_token, redirect_uri)
+- `POST /telegram-auth` - Process Telegram Login Widget callback
+- `GET /available-groups` - List Telegram groups where bot is admin
+- `POST /select-group` - Select Telegram group for integration
+- `POST /complete` - Complete authorization and create integration (requires auth)
+- `GET /session/:stateToken` - Get session status
+- `POST /cancel` - Cancel authorization flow
+- `GET /callback` - Callback endpoint for APOIA.se
+
+### APOIA.se Integration Routes (`/api/campaigns/:campaignSlug/integrations/telegram`)
+- `POST /` - Start integration from APOIA.se (creates temp credentials, returns redirect URL)
+- `GET /callback` - Callback from integration service
+- `GET /` - List integrations for campaign
+- `DELETE /:id` - Remove integration
+
 ### Webhooks
 - `POST /webhook/apoiase` - APOIA.se webhook (6 events)
 - `POST /webhook/telegram` - Telegram webhook
@@ -278,16 +348,18 @@ JWT_SECRET=your-secret-here
 JWT_EXPIRES_IN=7d
 
 TELEGRAM_BOT_TOKEN=your-bot-token
+TELEGRAM_BOT_USERNAME=your_bot_username  # For Telegram Login Widget
 TELEGRAM_WEBHOOK_URL=https://your-domain.com/webhook/telegram
 
-APOIASE_API_KEY=your-api-key
+APOIASE_API_KEY=your-api-key  # Optional, for legacy integration
 APOIASE_WEBHOOK_SECRET=your-webhook-secret
-APOIASE_API_URL=https://apoia.se/api
+APOIASE_API_URL=https://api.apoia.se  # Real API endpoint
 ```
 
 ### Frontend (.env.local)
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=your_bot_username  # For Telegram Login Widget
 ```
 
 ## Important Patterns and Conventions
@@ -325,11 +397,14 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 - Removal check job: Every 6 hours
 - Configured in [backend/src/jobs/syncMembers.ts](backend/src/jobs/syncMembers.ts)
 
-## Verification Service (Mock vs Production)
+## Verification Service (Real APOIA.se API)
 
-The verification service ([backend/src/services/verificationService.ts](backend/src/services/verificationService.ts)) supports both mock and production modes:
-- Mock mode returns `active` for testing (when APOIA.se API not configured)
-- Production mode calls real APOIA.se API
+The verification service ([backend/src/services/verificationService.ts](backend/src/services/verificationService.ts)) now integrates with the real APOIA.se API:
+- Uses [apoiaseApiService.ts](backend/src/services/apoiaseApiService.ts) to make API calls
+- Endpoint: `GET /backers/charges/{email}` with campaign-specific credentials
+- Returns: `{ isBacker: boolean, isPaidThisMonth: boolean, thisMonthPaidValue?: number }`
+- Credentials stored securely in Integration model (select: false)
+- Fallback mock mode available for testing when API credentials not configured
 
 ## Common Development Tasks
 
@@ -385,46 +460,59 @@ Critical indexes for performance:
 - Image upload service not implemented (currently using external URLs)
 - Profile page UI not fully implemented
 
-## Recent Updates (2025-10-12)
+## Recent Updates
 
-### Major Changes
+### November 2025 (Latest)
+1. **OAuth-like Integration Flow with APOIA.se**
+   - Created full OAuth-like authorization flow for seamless integration
+   - Added IntegrationAuthSession model for temporary session management
+   - Implemented Telegram Login Widget authentication with hash validation
+   - Added automatic Telegram group discovery (lists groups where bot is admin)
+   - Created integration authorization page with step-by-step UI
+   - APOIA.se can now redirect makers to our service for one-click Telegram integration
+
+2. **Real APOIA.se API Integration**
+   - Implemented apoiaseApiService for real API communication
+   - Verification now uses actual APOIA.se API endpoint (`/backers/charges/{email}`)
+   - Campaign-specific API credentials stored securely (select: false in model)
+   - Support for real-time payment status verification
+
+3. **New Services & Controllers**
+   - integrationAuthService - OAuth-like flow logic
+   - integrationAuthController - Authorization endpoints
+   - telegramGroupDiscoveryService - Auto-discover bot's Telegram groups
+   - apoiaseApiService - APOIA.se API client
+
+4. **New Frontend Pages**
+   - `/integration/authorize` - OAuth authorization page with Telegram widget
+   - `/campaigns/[slug]/integrations` - Campaign integrations management
+   - TelegramGroupSelector component for group selection UI
+
+5. **Documentation**
+   - Added INTEGRATION_FLOW.md - Complete OAuth flow documentation
+   - Added APOIA_SE_INTEGRATION_GUIDE.md - Integration guide for APOIA.se team
+
+### October 2025
 1. **Authentication System Overhaul**
    - Removed mock authentication, implemented real database-backed auth
    - Added user registration endpoint (`POST /api/auth/register`)
    - Passwords now properly hashed with bcrypt
    - Changed role system from single `role` to `roles` array
-   - Updated all controllers to check `req.user.roles.includes()` instead of `req.user.role`
 
-2. **New Campaign System**
+2. **Campaign & Support Systems**
    - Created complete Campaign model with reward levels
-   - Added campaignController and campaignService
-   - Implemented full CRUD: create, read, update, delete campaigns
-   - Campaign creation wizard with 3-step form (basic info, media, reward levels)
-   - Public campaign discovery page with categories and search
-   - Campaign detail pages with support flow placeholders
+   - Added full CRUD for campaigns and supports
+   - Campaign creation wizard with 3-step form
+   - Public campaign discovery with filters
 
-3. **New Support System**
-   - Created Support model for user subscriptions
-   - Added supportController and supportService
-   - Track user supports with status (active, paused, cancelled)
-   - "My Supports" dashboard for users to manage subscriptions
+3. **Frontend Revamp**
+   - Built modern UI with Navbar and Footer
+   - Landing page with campaign showcase
+   - Multiple dashboards (My Campaigns, My Supports)
 
-4. **Frontend Revamp**
-   - Removed old dashboard, built new modern UI
-   - Added Navbar and Footer components
-   - Created landing page with campaign showcase
-   - Built registration and improved login pages
-   - Fixed API routes: all endpoints now correctly use `/api` prefix
-
-5. **Database Schema Updates**
-   - Integration model: changed `campaignId` and `createdBy` from String to ObjectId references
-   - All models now use proper Mongoose relationships
+4. **Database Schema Updates**
+   - All models now use proper ObjectId references
    - Added indexes for performance
-
-6. **Bug Fixes**
-   - Fixed frontend API calls missing `/api` prefix (was causing 404 errors)
-   - Fixed authentication middleware to work with roles array
-   - Fixed integration ownership checks to use ObjectId properly
 
 ## Troubleshooting
 
@@ -444,3 +532,5 @@ Critical indexes for performance:
 - [GETTING_STARTED.md](GETTING_STARTED.md) - Quick start guide (5 minutes)
 - [COMMANDS.md](COMMANDS.md) - Comprehensive command reference
 - [DOCKER_MODES.md](DOCKER_MODES.md) - Docker development vs production modes
+- [INTEGRATION_FLOW.md](INTEGRATION_FLOW.md) - OAuth-like integration flow with APOIA.se
+- [APOIA_SE_INTEGRATION_GUIDE.md](APOIA_SE_INTEGRATION_GUIDE.md) - Guide for APOIA.se integration

@@ -14,6 +14,13 @@ interface Campaign {
   category: string;
 }
 
+interface TelegramIntegration {
+  hasIntegration: boolean;
+  telegramLink?: string;
+  groupTitle?: string;
+  isMember?: boolean;
+}
+
 interface Support {
   _id: string;
   campaignId: Campaign;
@@ -25,6 +32,7 @@ interface Support {
   startDate: string;
   cancelledAt?: string;
   createdAt: string;
+  telegramIntegration?: TelegramIntegration;
 }
 
 export default function MeusApoios() {
@@ -49,7 +57,30 @@ export default function MeusApoios() {
     try {
       setLoading(true);
       const response = await api.get('/api/supports/my/supports');
-      setSupports(response.data);
+      const supportsData: Support[] = response.data;
+
+      // Buscar informações de integração para cada apoio
+      const supportsWithIntegration = await Promise.all(
+        supportsData.map(async (support) => {
+          try {
+            const integrationResponse = await api.get(
+              `/api/integrations/supporter/${support.campaignId._id}`
+            );
+            return {
+              ...support,
+              telegramIntegration: integrationResponse.data,
+            };
+          } catch (err) {
+            // Se não houver integração, retornar sem integração
+            return {
+              ...support,
+              telegramIntegration: { hasIntegration: false },
+            };
+          }
+        })
+      );
+
+      setSupports(supportsWithIntegration);
     } catch (err: any) {
       console.error('Error fetching supports:', err);
       setError(err.response?.data?.error || 'Erro ao carregar apoios');
@@ -314,6 +345,32 @@ function SupportCard({ support, getStatusLabel, getStatusColor, formatDate, onPa
               </div>
             )}
           </div>
+
+          {/* Telegram Integration */}
+          {support.telegramIntegration?.hasIntegration && support.status === 'active' && (
+            <div className="mt-3 pt-3 border-t border-gray-200">
+              {support.telegramIntegration.isMember ? (
+                <div className="flex items-center gap-2 text-sm text-green-600">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                  <span className="font-medium">Conectado ao grupo Telegram: {support.telegramIntegration.groupTitle}</span>
+                </div>
+              ) : (
+                <a
+                  href={support.telegramIntegration.telegramLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#0088cc] text-white rounded-lg hover:bg-[#006ba3] transition-colors text-sm font-medium"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.941z"/>
+                  </svg>
+                  Entrar no grupo Telegram: {support.telegramIntegration.groupTitle}
+                </a>
+              )}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button

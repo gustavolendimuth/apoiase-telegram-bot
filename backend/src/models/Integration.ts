@@ -3,10 +3,14 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 export interface IIntegration extends Document {
   _id: Types.ObjectId;
   campaignId: Types.ObjectId; // Reference to Campaign
+  campaignSlug?: string; // APOIA.se campaign slug (optional, for external campaigns)
   telegramGroupId: string;
   telegramGroupType: 'group' | 'supergroup' | 'channel';
   telegramGroupTitle: string;
   apiKey: string;
+  // Credenciais da campanha no APOIA.se (criptografadas)
+  apoiaseApiKey?: string;
+  apoiaseBearerToken?: string;
   rewardLevels: string[]; // IDs dos níveis de recompensa que dão acesso
   isActive: boolean;
   createdBy: Types.ObjectId; // Reference to User (maker)
@@ -21,6 +25,10 @@ const IntegrationSchema = new Schema<IIntegration>(
       ref: 'Campaign',
       required: true,
       index: true,
+    },
+    campaignSlug: {
+      type: String,
+      required: false,
     },
     telegramGroupId: {
       type: String,
@@ -41,6 +49,16 @@ const IntegrationSchema = new Schema<IIntegration>(
       type: String,
       required: true,
       unique: true,
+    },
+    apoiaseApiKey: {
+      type: String,
+      required: false,
+      select: false, // Não retornar por padrão (segurança)
+    },
+    apoiaseBearerToken: {
+      type: String,
+      required: false,
+      select: false, // Não retornar por padrão (segurança)
     },
     rewardLevels: {
       type: [String],

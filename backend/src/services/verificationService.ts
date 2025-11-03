@@ -1,5 +1,7 @@
 import axios from 'axios';
 import Integration from '../models/Integration';
+import Support from '../models/Support';
+import User from '../models/User';
 import memberService from './memberService';
 import logger from '../config/logger';
 
@@ -17,65 +19,60 @@ interface SupporterData {
 }
 
 /**
- * Serviço de verificação de apoiadores na APOIA.se
+ * Serviço de verificação de apoiadores (API interna)
  */
 export class VerificationService {
-  private apoiaseApiUrl: string;
-  private apoiaseApiKey: string;
-
-  constructor() {
-    this.apoiaseApiUrl = process.env.APOIASE_API_URL || 'https://api.apoia.se';
-    this.apoiaseApiKey = process.env.APOIASE_API_KEY || '';
-  }
-
   /**
-   * Verifica status do apoiador na API da APOIA.se
+   * Verifica status do apoiador usando modelo Support interno
    */
   async verifySupporterStatus(
     email: string,
     campaignId: string
   ): Promise<SupporterData | null> {
     try {
-      // TODO: Implementar integração real com API da APOIA.se
-      // Por enquanto, retornar mock para desenvolvimento
+      // Buscar usuário pelo email
+      const user = await User.findOne({ email });
 
-      logger.warn('Usando verificação mock - implementar API real da APOIA.se');
-
-      // Mock para desenvolvimento
-      const mockSupporter: SupporterData = {
-        id: `supporter-${Date.now()}`,
-        email,
-        campaignId,
-        rewardLevel: 'basic',
-        status: 'active',
-        paymentStatus: 'up_to_date',
-        lastPaymentDate: new Date(),
-      };
-
-      // Em produção, fazer chamada real:
-      /*
-      const response = await axios.get(
-        `${this.apoiaseApiUrl}/campaigns/${campaignId}/supporters`,
-        {
-          headers: {
-            'Authorization': `Bearer ${this.apoiaseApiKey}`,
-          },
-          params: {
-            email,
-          },
-        }
-      );
-
-      if (!response.data || !response.data.supporter) {
+      if (!user) {
+        logger.info('Usuário não encontrado para email:', email.substring(0, 3) + '***');
         return null;
       }
 
-      return response.data.supporter;
-      */
+      // Buscar apoio ativo para esta campanha
+      const support = await Support.findOne({
+        userId: user._id,
+        campaignId,
+        status: { $in: ['active', 'paused', 'payment_failed'] },
+      });
 
-      return mockSupporter;
+      if (!support) {
+        logger.info('Apoio não encontrado para usuário e campanha');
+        return null;
+      }
+
+      // Determinar status e payment status
+      const isActive = support.status === 'active';
+      const isPaymentOk = support.status === 'active'; // Se status for active, pagamento está ok
+
+      const supporterData: SupporterData = {
+        id: support._id.toString(),
+        email: user.email,
+        campaignId: campaignId,
+        rewardLevel: support.rewardLevelId || 'basic',
+        status: isActive ? 'active' : support.status === 'cancelled' ? 'cancelled' : 'inactive',
+        paymentStatus: isPaymentOk ? 'up_to_date' : support.status === 'payment_failed' ? 'failed' : 'overdue',
+        lastPaymentDate: support.lastPaymentDate,
+      };
+
+      logger.info('Apoiador verificado com sucesso', {
+        supportId: support._id,
+        status: supporterData.status,
+        paymentStatus: supporterData.paymentStatus,
+      });
+
+      return supporterData;
     } catch (error) {
-      logger.error('Erro ao verificar apoiador na APOIA.se:', error);
+      logger.error('Erro ao verificar apoiador:', error);
       return null;
     }
   }

@@ -8,7 +8,7 @@ COPY backend/package*.json ./backend/
 COPY shared/package*.json ./shared/
 
 # Instalar dependências usando workspaces
-RUN npm ci
+RUN npm install
 
 # Copiar código fonte
 COPY backend ./backend

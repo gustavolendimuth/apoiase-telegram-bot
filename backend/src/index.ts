@@ -8,6 +8,8 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
 import authRoutes from './routes/authRoutes';
 import integrationRoutes from './routes/integrationRoutes';
+import integrationAuthRoutes from './routes/integrationAuthRoutes';
+import apoiaseIntegrationRoutes from './routes/apoiaseIntegrationRoutes';
 import webhookRoutes from './routes/webhookRoutes';
 import campaignRoutes from './routes/campaignRoutes';
 import supportRoutes from './routes/supportRoutes';
@@ -41,6 +43,8 @@ app.get('/health', (req, res) => {
 // Rotas da API
 app.use('/api/auth', authRoutes);
 app.use('/api/integrations', integrationRoutes);
+app.use('/api/integration', integrationAuthRoutes); // Fluxo OAuth-like
+app.use('/api/campaigns', apoiaseIntegrationRoutes); // Endpoints APOIA.se-style (campanhas com integrações)
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/supports', supportRoutes);
 app.use('/webhook', webhookRoutes);

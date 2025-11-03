@@ -20,4 +20,11 @@ router.post('/:id/activate', integrationController.activate);
 router.post('/:id/deactivate', integrationController.deactivate);
 router.post('/:id/regenerate-key', integrationController.regenerateApiKey);
 
+// Rotas de autorização do Telegram (OAuth-like flow)
+router.post('/telegram/authorize', integrationController.startTelegramAuth);
+router.get('/telegram/authorize/:token', integrationController.checkTelegramAuth);
+
+// Rota para apoiadores verificarem integração
+router.get('/supporter/:campaignId', integrationController.getIntegrationForSupporter);
+
 export default router;

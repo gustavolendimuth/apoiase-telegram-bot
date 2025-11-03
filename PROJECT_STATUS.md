@@ -6,8 +6,8 @@ Sistema completo de integração entre **APOIA.se** e **Telegram** que automatiz
 
 **Status Atual**: ✅ **MVP COMPLETO - 3 de 4 Fases Concluídas (75%)**
 
-**Data de Início**: Janeiro 2025
-**Última Atualização**: Janeiro 2025
+**Data de Início**: Outubro 2024
+**Última Atualização**: Novembro 2025
 **Versão**: 1.0.0
 
 ---
@@ -111,19 +111,19 @@ Fase 4 - Deploy             ░░░░░░░░░░░░░░░░░�
 
 ---
 
-## 📊 Estatísticas Totais (Verificadas)
+## 📊 Estatísticas Totais (Atualizadas Novembro 2025)
 
-- **39 arquivos** TypeScript/TSX criados
-- **~4.433 linhas** de código (excluindo dependências)
-- **18 endpoints** de API REST
-- **7 componentes** UI React (Button, Input, Card, Badge, Modal, Toast, Loading)
+- **70+ arquivos** TypeScript/TSX criados
+- **~10.000+ linhas** de código (excluindo dependências)
+- **35+ endpoints** de API REST
+- **10 componentes** UI React (Button, Input, Card, Badge, Modal, Toast, Loading, Navbar, Footer, TelegramGroupSelector)
 - **2 custom hooks** (useAuth, useIntegrations)
-- **3 páginas** (Home, Login, Dashboard)
+- **11+ páginas** (Home, Login, Register, Campaigns, Campaign Detail, My Campaigns, Create Campaign, My Supports, Profile, Integration Authorize, Campaign Integrations)
 - **6 eventos** de webhook processados
-- **3 Models** MongoDB com índices otimizados (Integration, Member, EventLog)
-- **3 Controllers** (auth, integration, webhook)
-- **5 Services** (auth, integration, member, telegram, verification)
-- **3 Routes** (auth, integration, webhook)
+- **8 Models** MongoDB (Integration, Member, EventLog, Campaign, Support, User, IntegrationAuthSession, TelegramAuthToken)
+- **6 Controllers** (auth, integration, integrationAuth, webhook, campaign, support)
+- **10 Services** (auth, integration, integrationAuth, member, telegram, telegramGroupDiscovery, verification, campaign, support, apoiaseApi)
+- **7 Routes** (auth, integration, integrationAuth, apoiaseIntegration, webhook, campaign, support)
 - **1 Job** com 2 tarefas recorrentes (sync diário 02:00 + verificação 6h)
 - **100% TypeScript** (type-safe)
 
@@ -159,8 +159,11 @@ Fase 4 - Deploy             ░░░░░░░░░░░░░░░░░�
 ## 🎯 Funcionalidades Implementadas
 
 ### Para Fazedores
+✅ **Integração OAuth-like com APOIA.se** - Fluxo seamless de autorização
+✅ **Auto-descoberta de grupos Telegram** - Lista automática de grupos onde bot é admin
 ✅ Dashboard web completo para gerenciar integrações
 ✅ Criar e vincular campanhas APOIA.se a grupos Telegram
+✅ Sistema completo de campanhas (CRUD)
 ✅ Visualizar membros ativos e status em tempo real
 ✅ Sincronização manual e automática
 ✅ Sistema de API Keys para segurança
@@ -168,11 +171,14 @@ Fase 4 - Deploy             ░░░░░░░░░░░░░░░░░�
 
 ### Para Apoiadores
 ✅ Acesso instantâneo via link de convite (24h de validade)
+✅ **Verificação com API real do APOIA.se** - Status de pagamento em tempo real
 ✅ Verificação simples por email no Telegram
 ✅ Avisos automáticos antes de remoção
 ✅ Status sincronizado diariamente
+✅ Dashboard "Meus Apoios" para gerenciar assinaturas
 
 ### Automação
+✅ **Telegram Login Widget** - Autenticação segura com validação HMAC-SHA256
 ✅ Bot Telegram inteligente com verificação automática
 ✅ Job diário de sincronização (02:00)
 ✅ Verificação de remoções automáticas (cada 6h)
@@ -180,27 +186,68 @@ Fase 4 - Deploy             ░░░░░░░░░░░░░░░░░�
 ✅ Remoção automática após 7 dias de inatividade
 ✅ Webhooks bidirecionais (APOIA.se ↔ Sistema)
 
+### Segurança
+✅ **State tokens anti-CSRF** - Proteção do fluxo OAuth
+✅ **Credenciais temporárias** - Redis com expiração de 1h
+✅ **Sessões seguras** - Expiração em 30min
+✅ **Hash validation** - HMAC-SHA256 para Telegram Widget
+✅ **Credenciais protegidas** - select: false no Mongoose
+
 ---
 
-## 🔗 Endpoints da API (18 total)
+## 🔗 Endpoints da API (35+ total)
 
 ### Autenticação (`/api/auth`)
-- `POST /api/auth/login` - Login (dev: aceita qualquer email/senha; prod: integrar com APOIA.se)
-- `POST /api/auth/validate-apoiase` - Validar token APOIA.se (para produção)
+- `POST /api/auth/register` - Registrar novo usuário
+- `POST /api/auth/login` - Login com email/senha (JWT)
+- `POST /api/auth/validate-apoiase` - Validar token APOIA.se
 - `GET /api/auth/me` - Dados do usuário autenticado
 - `POST /api/auth/logout` - Logout
 
-**Nota**: Endpoint `/register` não implementado. Sistema usa autenticação mock em dev (qualquer email/senha) e integração com APOIA.se em produção.
+### Campanhas (`/api/campaigns`)
+- `POST /api/campaigns` - Criar campanha (auth)
+- `GET /api/campaigns/all` - Listar campanhas públicas
+- `GET /api/campaigns/search` - Buscar campanhas
+- `GET /api/campaigns/my/campaigns` - Minhas campanhas (auth)
+- `GET /api/campaigns/slug/:slug` - Buscar por slug
+- `GET /api/campaigns/:id` - Detalhes da campanha
+- `PUT /api/campaigns/:id` - Atualizar (auth + ownership)
+- `DELETE /api/campaigns/:id` - Deletar (auth + ownership)
+
+### Apoios (`/api/supports`)
+- `POST /api/supports` - Criar apoio (auth)
+- `GET /api/supports/my/supports` - Meus apoios (auth)
+- `GET /api/supports/campaign/:id` - Apoios de uma campanha
+- `POST /api/supports/:id/pause` - Pausar apoio
+- `POST /api/supports/:id/resume` - Retomar apoio
+- `POST /api/supports/:id/cancel` - Cancelar apoio
 
 ### Integrações (`/api/integrations`)
-- `POST /api/integrations` - Criar integração
-- `GET /api/integrations` - Listar integrações do usuário
-- `GET /api/integrations/:id` - Detalhes da integração
-- `PUT /api/integrations/:id` - Atualizar integração
-- `DELETE /api/integrations/:id` - Remover integração
-- `POST /api/integrations/:id/toggle` - Ativar/desativar
-- `GET /api/integrations/:id/members` - Listar membros
-- `POST /api/integrations/:id/sync` - Sincronizar agora
+- `POST /api/integrations` - Criar integração (auth)
+- `GET /api/integrations` - Listar integrações (auth)
+- `GET /api/integrations/telegram-link/:campaignId` - Link Telegram
+- `GET /api/integrations/:id` - Detalhes (auth)
+- `PUT /api/integrations/:id` - Atualizar (auth + ownership)
+- `DELETE /api/integrations/:id` - Deletar (auth + ownership)
+- `POST /api/integrations/:id/activate` - Ativar
+- `POST /api/integrations/:id/deactivate` - Desativar
+- `POST /api/integrations/:id/regenerate-key` - Regenerar API key
+
+### Autorização OAuth (`/api/integration`)
+- `GET /api/integration/authorize` - Iniciar fluxo OAuth
+- `POST /api/integration/telegram-auth` - Telegram Widget callback
+- `GET /api/integration/available-groups` - Listar grupos do bot
+- `POST /api/integration/select-group` - Selecionar grupo
+- `POST /api/integration/complete` - Completar integração (auth)
+- `GET /api/integration/session/:token` - Status da sessão
+- `POST /api/integration/cancel` - Cancelar fluxo
+- `GET /api/integration/callback` - Callback para APOIA.se
+
+### APOIA.se Integration Routes (`/api/campaigns/:slug/integrations/telegram`)
+- `POST /` - Iniciar integração do APOIA.se
+- `GET /callback` - Callback do serviço de integração
+- `GET /` - Listar integrações da campanha
+- `DELETE /:id` - Remover integração
 
 ### Webhooks
 - `POST /webhook/apoiase` - Webhook da APOIA.se (6 eventos)
@@ -213,13 +260,16 @@ Fase 4 - Deploy             ░░░░░░░░░░░░░░░░░�
 
 ## 🚀 Como Funciona (Fluxo Completo)
 
-### 1️⃣ Fazedor Cria Integração
+### 1️⃣ Integração OAuth-like (APOIA.se → Telegram) - NOVO! 🎉
 ```
-Login → Dashboard → Nova Integração
-→ Informa Campaign ID + Telegram Group ID
-→ Sistema valida permissões do bot no grupo
-→ Gera API Key única
-→ Integração ativa!
+Maker no APOIA.se clica "Conectar Telegram"
+→ APOIA.se cria credenciais temporárias (1h, Redis)
+→ Redireciona para nosso serviço de integração
+→ Usuário autentica com Telegram Login Widget (validação HMAC-SHA256)
+→ Sistema lista automaticamente grupos onde bot é admin
+→ Usuário seleciona o grupo desejado
+→ Integração criada com credenciais do APOIA.se
+→ Redireciona de volta para APOIA.se com sucesso ✅
 ```
 
 ### 2️⃣ Novo Apoiador
@@ -231,13 +281,14 @@ Usuário apoia na APOIA.se
 → Link enviado ao apoiador
 ```
 
-### 3️⃣ Verificação no Telegram
+### 3️⃣ Verificação no Telegram (API Real)
 ```
 Apoiador clica no link → Entra no grupo
 → Bot solicita email no chat privado
 → Apoiador envia email
-→ Bot verifica status na APOIA.se API
-→ Status OK: Libera acesso ✅
+→ Bot verifica status na APOIA.se API REAL
+→ Chama GET /backers/charges/{email} com credenciais da campanha
+→ Status OK (isPaidThisMonth: true): Libera acesso ✅
 → Status inativo: Remove do grupo ❌
 ```
 
@@ -245,7 +296,7 @@ Apoiador clica no link → Entra no grupo
 ```
 Diariamente às 02:00 (cron job)
 → Sistema sincroniza todos os membros
-→ Consulta status na APOIA.se
+→ Consulta status real na APOIA.se API
 → Se pagamento em atraso:
    • Envia aviso 48h antes
    • Remove após 7 dias sem pagamento
@@ -260,6 +311,10 @@ Diariamente às 02:00 (cron job)
 - ✅ [PROJECT_STATUS.md](PROJECT_STATUS.md) - Este arquivo (status detalhado)
 - ✅ [ARCHITECTURE.md](ARCHITECTURE.md) - Arquitetura técnica e padrões
 - ✅ [COMMANDS.md](COMMANDS.md) - Comandos úteis para desenvolvimento
+- ✅ [DOCKER_MODES.md](DOCKER_MODES.md) - Modos desenvolvimento vs produção
+- ✅ [INTEGRATION_FLOW.md](INTEGRATION_FLOW.md) - Fluxo OAuth-like de integração
+- ✅ [APOIA_SE_INTEGRATION_GUIDE.md](APOIA_SE_INTEGRATION_GUIDE.md) - Guia para equipe APOIA.se
+- ✅ [CLAUDE.md](CLAUDE.md) - Documentação para Claude Code AI
 
 ---
 

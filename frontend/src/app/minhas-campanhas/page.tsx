@@ -304,13 +304,22 @@ function CampaignCard({ campaign, getStatusLabel, getStatusColor, getCategoryLab
             <span>Ver campanha</span>
           </Link>
           <Link
-            href={`/profile/campaign/integrations?campaignId=${campaign._id}`}
-            className="flex items-center gap-2 text-[#ed5544] hover:text-[#d64435] transition-colors text-sm font-medium"
+            href={`/profile/campaign?campaignId=${campaign._id}`}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
             <span>Editar</span>
+          </Link>
+          <Link
+            href={`/integration/authorize?campaign_id=${campaign._id}`}
+            className="flex items-center gap-2 text-[#ed5544] hover:text-[#d64435] transition-colors text-sm font-medium"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <span>Conectar Telegram</span>
           </Link>
         </div>
       </div>

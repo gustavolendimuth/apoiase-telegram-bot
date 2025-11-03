@@ -165,6 +165,103 @@ Cron Job              Backend               MongoDB          Telegram
    │◄────────────────────┤                     │                │
 ```
 
+### 5. Fluxo OAuth-like de Integração (APOIA.se → Telegram)
+
+```
+APOIA.se              Integration Service    Telegram API      MongoDB
+   │                          │                     │               │
+   │ 1. POST /campaigns/      │                     │               │
+   │    :slug/integrations/   │                     │               │
+   │    telegram              │                     │               │
+   ├─────────────────────────►│                     │               │
+   │                          │                     │               │
+   │                          │ Create temp         │               │
+   │                          │ credentials (Redis) │               │
+   │                          │ Generate state token│               │
+   │                          │                     │               │
+   │ 2. Redirect URL          │                     │               │
+   │◄─────────────────────────┤                     │               │
+   │                          │                     │               │
+   │                                                                 │
+   │                    User Browser                                │
+   │                          │                     │               │
+   │ 3. GET /integration/     │                     │               │
+   │    authorize?state=xxx   │                     │               │
+   ├─────────────────────────►│                     │               │
+   │                          │                     │               │
+   │                          │ Create session      │               │
+   │                          ├────────────────────────────────────►│
+   │                          │                     │               │
+   │ 4. Show Telegram         │                     │               │
+   │    Login Widget          │                     │               │
+   │◄─────────────────────────┤                     │               │
+   │                          │                     │               │
+   │ 5. User logs in          │                     │               │
+   │    with Telegram         │                     │               │
+   ├──────────────────────────┼────────────────────►│               │
+   │                          │                     │               │
+   │                          │◄────────────────────┤               │
+   │                          │  (auth data + hash) │               │
+   │                          │                     │               │
+   │ 6. POST /integration/    │                     │               │
+   │    telegram-auth         │                     │               │
+   ├─────────────────────────►│                     │               │
+   │                          │                     │               │
+   │                          │ Validate hash       │               │
+   │                          │ Update session      │               │
+   │                          ├────────────────────────────────────►│
+   │                          │                     │               │
+   │ 7. GET /integration/     │                     │               │
+   │    available-groups      │                     │               │
+   ├─────────────────────────►│                     │               │
+   │                          │                     │               │
+   │                          │ List bot's groups   │               │
+   │                          ├────────────────────►│               │
+   │                          │                     │               │
+   │                          │◄────────────────────┤               │
+   │                          │  (groups list)      │               │
+   │                          │                     │               │
+   │ 8. Groups list           │                     │               │
+   │◄─────────────────────────┤                     │               │
+   │                          │                     │               │
+   │ 9. POST /integration/    │                     │               │
+   │    select-group          │                     │               │
+   ├─────────────────────────►│                     │               │
+   │                          │                     │               │
+   │                          │ Update session      │               │
+   │                          ├────────────────────────────────────►│
+   │                          │                     │               │
+   │ 10. POST /integration/   │                     │               │
+   │     complete             │                     │               │
+   ├─────────────────────────►│                     │               │
+   │                          │                     │               │
+   │                          │ Create Integration  │               │
+   │                          ├────────────────────────────────────►│
+   │                          │                     │               │
+   │                          │ Mark session        │               │
+   │                          │ as completed        │               │
+   │                          ├────────────────────────────────────►│
+   │                          │                     │               │
+   │ 11. Callback redirect    │                     │               │
+   │     to APOIA.se          │                     │               │
+   │◄─────────────────────────┤                     │               │
+   │                          │                     │               │
+APOIA.se                      │                     │               │
+   │                          │                     │               │
+   │ GET /campaigns/:slug/    │                     │               │
+   │ integrations/telegram/   │                     │               │
+   │ callback?status=success  │                     │               │
+   │                          │                     │               │
+   │ Show success message     │                     │               │
+```
+
+**Segurança do Fluxo OAuth:**
+- State token único (256 bits, base64url) previne CSRF
+- Credenciais temporárias armazenadas em Redis (expira em 1h)
+- Sessão expira em 30 minutos
+- Hash do Telegram validado com HMAC-SHA256
+- Credenciais do APOIA.se armazenadas com `select: false` no Mongoose
+
 ---
 
 ## 🗂️ Estrutura de Diretórios
@@ -262,37 +359,73 @@ apoiase-telegram-bot/
 
 ## 🔗 Endpoints da API
 
-### Autenticação
+### Autenticação (`/api/auth`)
 ```
-POST   /api/auth/login                 # Login (mock)
+POST   /api/auth/register              # Registrar novo usuário
+POST   /api/auth/login                 # Login com email/senha
 POST   /api/auth/validate-apoiase      # Validar token APOIA.se
 GET    /api/auth/me                    # Info do usuário (protegida)
 POST   /api/auth/logout                # Logout (protegida)
 ```
 
-### Integrações [TODO]
+### Campanhas (`/api/campaigns`)
 ```
-POST   /api/integrations               # Criar integração (maker)
-GET    /api/integrations               # Listar integrações (maker)
-GET    /api/integrations/:id           # Buscar integração (maker)
-PUT    /api/integrations/:id           # Atualizar integração (maker)
-DELETE /api/integrations/:id           # Deletar integração (maker)
+POST   /api/campaigns                  # Criar campanha (auth)
+GET    /api/campaigns/all              # Listar campanhas públicas
+GET    /api/campaigns/search           # Buscar campanhas
+GET    /api/campaigns/my/campaigns     # Minhas campanhas (auth)
+GET    /api/campaigns/slug/:slug       # Buscar por slug
+GET    /api/campaigns/:id              # Detalhes da campanha
+PUT    /api/campaigns/:id              # Atualizar (auth + ownership)
+DELETE /api/campaigns/:id              # Deletar (auth + ownership)
+```
+
+### Apoios (`/api/supports`)
+```
+POST   /api/supports                   # Criar apoio (auth)
+GET    /api/supports/my/supports       # Meus apoios (auth)
+GET    /api/supports/campaign/:id      # Apoios de uma campanha
+POST   /api/supports/:id/pause         # Pausar apoio (auth)
+POST   /api/supports/:id/resume        # Retomar apoio (auth)
+POST   /api/supports/:id/cancel        # Cancelar apoio (auth)
+```
+
+### Integrações (`/api/integrations`)
+```
+POST   /api/integrations               # Criar integração (auth)
+GET    /api/integrations               # Listar integrações (auth)
+GET    /api/integrations/telegram-link/:campaignId  # Link do Telegram
+GET    /api/integrations/:id           # Detalhes (auth)
+PUT    /api/integrations/:id           # Atualizar (auth + ownership)
+DELETE /api/integrations/:id           # Deletar (auth + ownership)
 POST   /api/integrations/:id/activate  # Ativar integração
 POST   /api/integrations/:id/deactivate # Desativar integração
+POST   /api/integrations/:id/regenerate-key # Regenerar API key
 ```
 
-### Membros [TODO]
+### Autorização de Integração OAuth (`/api/integration`)
 ```
-GET    /api/members                    # Listar membros (maker)
-GET    /api/members/:id                # Buscar membro
-POST   /api/members/:id/verify         # Verificar membro
-DELETE /api/members/:id                # Remover membro
-GET    /api/members/stats              # Estatísticas
+GET    /api/integration/authorize      # Iniciar fluxo OAuth
+POST   /api/integration/telegram-auth  # Callback Telegram Widget
+GET    /api/integration/available-groups # Listar grupos do bot
+POST   /api/integration/select-group   # Selecionar grupo
+POST   /api/integration/complete       # Completar integração (auth)
+GET    /api/integration/session/:token # Status da sessão
+POST   /api/integration/cancel         # Cancelar fluxo
+GET    /api/integration/callback       # Callback para APOIA.se
 ```
 
-### Webhooks [TODO]
+### Rotas APOIA.se (`/api/campaigns/:slug/integrations/telegram`)
 ```
-POST   /webhook/apoiase                # Webhook APOIA.se
+POST   /api/campaigns/:slug/integrations/telegram     # Iniciar do APOIA.se
+GET    /api/campaigns/:slug/integrations/telegram/callback # Callback
+GET    /api/campaigns/:slug/integrations/telegram     # Listar integrações
+DELETE /api/campaigns/:slug/integrations/telegram/:id # Remover
+```
+
+### Webhooks
+```
+POST   /webhook/apoiase                # Webhook APOIA.se (6 eventos)
 POST   /webhook/telegram               # Webhook Telegram
 ```
 
@@ -310,14 +443,17 @@ GET    /health                         # Status do servidor
 | Campo              | Tipo     | Descrição                    | Índice |
 |--------------------|----------|------------------------------|--------|
 | _id                | ObjectId | ID único                     | ✓      |
-| campaignId         | String   | ID da campanha APOIA.se      | ✓      |
+| campaignId         | ObjectId | Ref: campaigns               | ✓      |
+| campaignSlug       | String   | Slug da campanha             |        |
 | telegramGroupId    | String   | ID do grupo Telegram         | ✓      |
 | telegramGroupType  | Enum     | Tipo do grupo                |        |
 | telegramGroupTitle | String   | Nome do grupo                |        |
 | apiKey             | String   | Chave API única              | ✓      |
+| apoiaseApiKey      | String   | API key do APOIA.se (select: false) |  |
+| apoiaseBearerToken | String   | Bearer token do APOIA.se (select: false) | |
 | rewardLevels       | Array    | Níveis de recompensa         |        |
 | isActive           | Boolean  | Status ativo/inativo         | ✓      |
-| createdBy          | String   | ID do fazedor                |        |
+| createdBy          | ObjectId | Ref: users                   |        |
 | createdAt          | Date     | Data de criação              |        |
 | updatedAt          | Date     | Data de atualização          |        |
 
@@ -354,6 +490,76 @@ GET    /health                         # Status do servidor
 | metadata       | Object   | Dados adicionais        |        |
 | errorMessage   | String   | Mensagem de erro        |        |
 | createdAt      | Date     | Data do evento          | ✓      |
+
+### Collection: `integrationauthsessions` (Temporárias - expiram em 30min)
+
+| Campo                  | Tipo     | Descrição               | Índice |
+|------------------------|----------|-------------------------|--------|
+| _id                    | ObjectId | ID único                | ✓      |
+| stateToken             | String   | Token único anti-CSRF   | ✓      |
+| campaignSlug           | String   | Slug da campanha        |        |
+| apiKey                 | String   | Credencial temporária   |        |
+| bearerToken            | String   | Token temporário        |        |
+| redirectUri            | String   | URL de callback         |        |
+| telegramUserId         | String   | ID do usuário Telegram  |        |
+| telegramUsername       | String   | Username Telegram       |        |
+| telegramGroupId        | String   | ID do grupo selecionado |        |
+| telegramGroupTitle     | String   | Nome do grupo           |        |
+| status                 | Enum     | Estado do fluxo OAuth   | ✓      |
+| expiresAt              | Date     | Expiração (30min)       | ✓      |
+| createdAt              | Date     | Data de criação         |        |
+| updatedAt              | Date     | Data de atualização     |        |
+
+**Status possíveis**: `pending` | `telegram_auth_complete` | `group_selected` | `completed` | `expired` | `cancelled`
+
+### Collection: `campaigns`
+
+| Campo          | Tipo     | Descrição               | Índice |
+|----------------|----------|-------------------------|--------|
+| _id            | ObjectId | ID único                | ✓      |
+| makerId        | ObjectId | Ref: users              | ✓      |
+| title          | String   | Título da campanha      |        |
+| slug           | String   | Slug único              | ✓      |
+| description    | String   | Descrição               |        |
+| category       | String   | Categoria               | ✓      |
+| goal           | Number   | Meta financeira         |        |
+| raised         | Number   | Valor arrecadado        |        |
+| currency       | String   | Moeda (BRL, USD, etc)   |        |
+| imageUrl       | String   | Imagem de capa          |        |
+| videoUrl       | String   | Vídeo (opcional)        |        |
+| rewardLevels   | Array    | Níveis de recompensa    |        |
+| supporters     | Number   | Número de apoiadores    |        |
+| status         | Enum     | Status da campanha      | ✓      |
+| createdAt      | Date     | Data de criação         |        |
+| updatedAt      | Date     | Data de atualização     |        |
+
+### Collection: `supports`
+
+| Campo          | Tipo     | Descrição               | Índice |
+|----------------|----------|-------------------------|--------|
+| _id            | ObjectId | ID único                | ✓      |
+| userId         | ObjectId | Ref: users              | ✓      |
+| campaignId     | ObjectId | Ref: campaigns          | ✓      |
+| rewardLevelId  | String   | ID do tier escolhido    |        |
+| amount         | Number   | Valor do apoio          |        |
+| status         | Enum     | Status do apoio         | ✓      |
+| recurring      | Boolean  | Assinatura recorrente   |        |
+| nextPaymentDate| Date     | Próximo pagamento       |        |
+| lastPaymentDate| Date     | Último pagamento        |        |
+| createdAt      | Date     | Data de criação         |        |
+| updatedAt      | Date     | Data de atualização     |        |
+
+### Collection: `users`
+
+| Campo          | Tipo     | Descrição               | Índice |
+|----------------|----------|-------------------------|--------|
+| _id            | ObjectId | ID único                | ✓      |
+| email          | String   | Email do usuário        | ✓      |
+| password       | String   | Hash bcrypt             |        |
+| name           | String   | Nome completo           |        |
+| roles          | Array    | Roles (user, admin)     |        |
+| createdAt      | Date     | Data de criação         |        |
+| updatedAt      | Date     | Data de atualização     |        |
 
 ---
 

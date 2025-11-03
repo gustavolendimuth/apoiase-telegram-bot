@@ -54,37 +54,27 @@ export default function Navbar() {
                 />
               </Link>
 
-              {/* Navigation */}
-              <nav className="hidden md:flex gap-6">
-                <Link
-                  href="/campanhas"
-                  className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
-                >
-                  Descobrir
-                </Link>
-                {user && (
-                  <>
-                    <Link
-                      href="/minhas-campanhas"
-                      className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
-                    >
-                      Minhas Campanhas
-                    </Link>
-                    <Link
-                      href="/meus-apoios"
-                      className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
-                    >
-                      Meus Apoios
-                    </Link>
-                  </>
-                )}
-              </nav>
             </div>
 
             {/* Right side */}
             <div className="flex items-center gap-4">
+              {/* Navigation */}
+              <nav className="hidden md:flex gap-6">
+                <Link
+                  href="/campanhas"
+                  className="text-gray-600 hover:text-gray-900 transition-colors font-medium text-sm"
+                >
+                  Descobrir
+                </Link>
+              </nav>
               {user ? (
                 <>
+                  <Link
+                    href="/meus-apoios"
+                    className="text-gray-600 hover:text-gray-900 transition-colors font-medium text-sm"
+                  >
+                    Meus Apoios
+                  </Link>
                   <button
                     onClick={() => router.push('/minhas-campanhas')}
                     className="hidden sm:block px-4 py-2 bg-[#ed5544] text-white rounded-md hover:bg-[#d64435] transition-colors font-semibold"
