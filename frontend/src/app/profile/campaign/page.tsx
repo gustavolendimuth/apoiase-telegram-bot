@@ -98,7 +98,6 @@ function CampaignSettingsContent() {
       setError('');
       const response = await api.put(`/api/campaigns/${campaignId}`, editFormData);
       setCampaign(response.data);
-      setEditMode(false);
       // Show success message
       alert('Campanha atualizada com sucesso!');
     } catch (err: any) {
