@@ -364,6 +364,21 @@ NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=your_bot_username  # For Telegram Login Widget
 
 ## Important Patterns and Conventions
 
+### Git Commit Messages
+**IMPORTANT**: When creating git commits, **DO NOT** include the following lines in the commit message:
+```
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+Keep commit messages clean and focused on the actual changes made. Use conventional commit format:
+- `feat: description` for new features
+- `fix: description` for bug fixes
+- `refactor: description` for code refactoring
+- `docs: description` for documentation changes
+- `style: description` for formatting changes
+
 ### TypeScript Strict Mode
 - All code is 100% TypeScript (type-safe)
 - Shared types in [shared/types.ts](shared/types.ts)
