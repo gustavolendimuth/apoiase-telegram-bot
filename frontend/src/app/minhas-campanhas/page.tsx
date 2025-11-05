@@ -74,21 +74,6 @@ export default function MinhasCampanhasPage() {
     return colorMap[status] || 'bg-gray-100 text-gray-700';
   };
 
-  const getCategoryLabel = (category: string) => {
-    const categoryMap: Record<string, string> = {
-      art: 'Arte',
-      music: 'Música',
-      technology: 'Tecnologia',
-      education: 'Educação',
-      social: 'Social',
-      games: 'Games',
-      podcasts: 'Podcasts',
-      videos: 'Vídeos',
-      other: 'Outros',
-    };
-    return categoryMap[category] || category;
-  };
-
   if (authLoading || loading) {
     return (
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -153,7 +138,7 @@ export default function MinhasCampanhasPage() {
             {campaigns
               .filter(c => c.status === 'active')
               .map((campaign) => (
-                <CampaignCard key={campaign._id} campaign={campaign} getStatusLabel={getStatusLabel} getStatusColor={getStatusColor} getCategoryLabel={getCategoryLabel} />
+                <CampaignCard key={campaign._id} campaign={campaign} getStatusLabel={getStatusLabel} getStatusColor={getStatusColor} />
               ))}
           </div>
         </div>
@@ -175,7 +160,7 @@ export default function MinhasCampanhasPage() {
             {campaigns
               .filter(c => c.status !== 'active')
               .map((campaign) => (
-                <CampaignCard key={campaign._id} campaign={campaign} getStatusLabel={getStatusLabel} getStatusColor={getStatusColor} getCategoryLabel={getCategoryLabel} />
+                <CampaignCard key={campaign._id} campaign={campaign} getStatusLabel={getStatusLabel} getStatusColor={getStatusColor} />
               ))}
           </div>
         </div>
@@ -222,104 +207,129 @@ interface CampaignCardProps {
   campaign: Campaign;
   getStatusLabel: (status: string) => string;
   getStatusColor: (status: string) => string;
-  getCategoryLabel: (category: string) => string;
 }
 
-function CampaignCard({ campaign, getStatusLabel, getStatusColor, getCategoryLabel }: CampaignCardProps) {
-  const percentage = campaign.goal > 0 ? Math.min((campaign.raised / campaign.goal) * 100, 100) : 0;
-
+function CampaignCard({ campaign, getStatusLabel, getStatusColor }: CampaignCardProps) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
-      <div className="flex items-start gap-4">
-        <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-          <img
-            src={campaign.imageUrl}
-            alt={campaign.title}
-            className="w-full h-full object-cover"
-          />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between mb-2">
-            <div className="flex-1 min-w-0">
-              <h3 className="text-xl font-semibold text-gray-900 mb-1 truncate">
-                {campaign.title}
-              </h3>
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusColor(campaign.status)}`}>
-                  {getStatusLabel(campaign.status)}
-                </span>
-                <span className="text-sm text-gray-500">
-                  {getCategoryLabel(campaign.category)}
-                </span>
-              </div>
-            </div>
+    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+      <div className="p-6">
+        <div className="flex items-start gap-4">
+          {/* Campaign Image */}
+          <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+            <img
+              src={campaign.imageUrl}
+              alt={campaign.title}
+              className="w-full h-full object-cover"
+            />
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mt-4 mb-3">
-            <div>
-              <div className="text-xs text-gray-500 mb-1">Arrecadado</div>
-              <div className="text-lg font-bold text-[#ed5544]">
-                {campaign.currency} {campaign.raised.toLocaleString()}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-gray-500 mb-1">Meta</div>
-              <div className="text-lg font-semibold text-gray-700">
-                {campaign.currency} {campaign.goal.toLocaleString()}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-gray-500 mb-1">Apoiadores</div>
-              <div className="text-lg font-semibold text-gray-700">
-                {campaign.supporters}
-              </div>
-            </div>
-          </div>
+          {/* Campaign Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-lg font-bold text-gray-900">
+                    {campaign.title}
+                  </h3>
+                  <span className="text-gray-400">●</span>
+                  <span className={`text-xs px-2 py-0.5 rounded font-medium ${getStatusColor(campaign.status)}`}>
+                    {getStatusLabel(campaign.status) === 'Ativa' ? 'contínua' : getStatusLabel(campaign.status)}
+                  </span>
+                  <span className="text-gray-500 text-sm">por mês</span>
+                </div>
 
-          {/* Progress Bar */}
-          <div className="mb-4">
-            <div className="flex justify-between text-xs text-gray-600 mb-1">
-              <span>{percentage.toFixed(1)}% da meta</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-[#ed5544] h-2 rounded-full transition-all"
-                style={{ width: `${percentage}%` }}
-              ></div>
+                {/* Campaign Stats - Horizontal Layout */}
+                <div className="flex items-center gap-6 text-sm">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-gray-700 font-medium">{campaign.raised.toLocaleString()} arrecadação estimada por mês</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-600">Meta:</span>
+                    <span className="font-semibold text-gray-900">{campaign.currency} {campaign.goal.toLocaleString()} por mês (0% alcançada)</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 mt-2">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  <span className="text-gray-700 font-medium">{campaign.supporters} pessoas apoiando</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Actions */}
-        <div className="flex flex-col gap-2 items-end">
+      {/* Action Links Section */}
+      <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
+        <div className="flex flex-wrap gap-3">
           <Link
             href={`/campanha/${campaign.slug}`}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            <span>Ver campanha</span>
-          </Link>
-          <Link
-            href={`/profile/campaign?campaignId=${campaign._id}`}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm"
+            className="flex items-center gap-2 text-gray-600 hover:text-[#ed5544] transition-colors text-sm font-medium"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
-            <span>Editar</span>
+            <span>Postar no Mural</span>
           </Link>
           <Link
-            href={`/integration/authorize?campaign_id=${campaign._id}`}
-            className="flex items-center gap-2 text-[#ed5544] hover:text-[#d64435] transition-colors text-sm font-medium"
+            href={`/campanha/${campaign.slug}`}
+            className="flex items-center gap-2 text-gray-600 hover:text-[#ed5544] transition-colors text-sm font-medium"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
             </svg>
-            <span>Conectar Telegram</span>
+            <span>Postar áudio no Mural</span>
+          </Link>
+          <Link
+            href={`/profile/campaign?campaignId=${campaign._id}`}
+            className="flex items-center gap-2 text-gray-600 hover:text-[#ed5544] transition-colors text-sm font-medium"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            <span>Minhas Coleções</span>
+          </Link>
+          <Link
+            href={`/profile/campaign?campaignId=${campaign._id}`}
+            className="flex items-center gap-2 text-gray-600 hover:text-[#ed5544] transition-colors text-sm font-medium"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            <span>Editar campanha</span>
+          </Link>
+          <Link
+            href={`/profile/campaign?campaignId=${campaign._id}`}
+            className="flex items-center gap-2 text-gray-600 hover:text-[#ed5544] transition-colors text-sm font-medium"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span>Gerenciador de campanha</span>
+          </Link>
+          <Link
+            href={`/profile/campaign?campaignId=${campaign._id}`}
+            className="flex items-center gap-2 text-gray-600 hover:text-[#ed5544] transition-colors text-sm font-medium"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+            <span>Criar Campanha Combinada</span>
+          </Link>
+          <Link
+            href={`/profile/campaign?campaignId=${campaign._id}`}
+            className="flex items-center gap-2 text-gray-600 hover:text-[#ed5544] transition-colors text-sm font-medium"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <span>Dados bancários</span>
           </Link>
         </div>
       </div>
