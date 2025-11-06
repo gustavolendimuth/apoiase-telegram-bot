@@ -44,6 +44,7 @@ function CampaignSettingsContent() {
   const [loadingCampaign, setLoadingCampaign] = useState(true);
   const [error, setError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
 
   // Edit form state
   const [editFormData, setEditFormData] = useState({
@@ -88,6 +89,33 @@ function CampaignSettingsContent() {
       setError(err.response?.data?.error || 'Erro ao carregar campanha');
     } finally {
       setLoadingCampaign(false);
+    }
+  };
+
+  const handleConnectTelegram = async () => {
+    if (!campaign?.slug) {
+      setError('Slug da campanha não disponível');
+      return;
+    }
+
+    try {
+      setIsConnecting(true);
+      setError('');
+
+      // Chamar endpoint que gera credenciais temporárias e retorna URL de redirecionamento
+      const response = await api.post(`/api/campaigns/${campaign.slug}/integrations/telegram`);
+
+      if (response.data.success && response.data.redirectUrl) {
+        // Redirecionar para a URL que contém todos os parâmetros necessários
+        window.location.href = response.data.redirectUrl;
+      } else {
+        setError('Erro ao iniciar integração. Tente novamente.');
+      }
+    } catch (err: any) {
+      console.error('Erro ao conectar Telegram:', err);
+      setError(err.response?.data?.error || 'Erro ao iniciar integração com Telegram');
+    } finally {
+      setIsConnecting(false);
     }
   };
 
@@ -515,10 +543,11 @@ function CampaignSettingsContent() {
                     {/* Connect Button */}
                     <div className="flex-shrink-0">
                       <button
-                        onClick={() => router.push(`/integration/authorize?campaign_id=${campaign._id}`)}
-                        className="px-5 py-2 bg-[#ed5544] hover:bg-[#d64435] text-white rounded font-medium text-sm transition-colors"
+                        onClick={handleConnectTelegram}
+                        disabled={isConnecting || !campaign?.slug}
+                        className="px-5 py-2 bg-[#ed5544] hover:bg-[#d64435] text-white rounded font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Conectar
+                        {isConnecting ? 'Conectando...' : 'Conectar'}
                       </button>
                     </div>
                   </div>

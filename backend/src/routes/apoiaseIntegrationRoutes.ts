@@ -69,14 +69,14 @@ router.post(
       );
 
       // 4. Construir URL de redirecionamento para serviço de integração
-      const integrationServiceUrl =
-        process.env.TELEGRAM_INTEGRATION_SERVICE_URL || "http://localhost:3000";
-      const callbackUrl = `${getFrontendUrl()}/profile/campaign?campaignId=${
+      // Usa a URL do frontend (que é onde o serviço de integração está hospedado)
+      const frontendUrl = getFrontendUrl();
+      const callbackUrl = `${frontendUrl}/profile/campaign?campaignId=${
         campaign._id
       }`;
 
       const redirectUrl = new URL(
-        `${integrationServiceUrl}/integration/authorize`
+        `${frontendUrl}/integration/authorize`
       );
       redirectUrl.searchParams.set("campaign_slug", campaignSlug);
       redirectUrl.searchParams.set("api_key", apiKey);
