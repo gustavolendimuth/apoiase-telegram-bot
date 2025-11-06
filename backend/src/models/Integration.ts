@@ -24,7 +24,6 @@ const IntegrationSchema = new Schema<IIntegration>(
       type: Schema.Types.ObjectId,
       ref: 'Campaign',
       required: true,
-      index: true,
     },
     campaignSlug: {
       type: String,
@@ -34,7 +33,6 @@ const IntegrationSchema = new Schema<IIntegration>(
       type: String,
       required: true,
       unique: true,
-      index: true,
     },
     telegramGroupType: {
       type: String,

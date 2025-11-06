@@ -15,17 +15,16 @@ const EventLogSchema = new Schema<IEventLog>(
     eventType: {
       type: String,
       required: true,
-      index: true,
     },
     integrationId: {
       type: Schema.Types.ObjectId,
       ref: 'Integration',
-      index: true,
+      index: true, // Kept: used for queries filtering by integrationId only
     },
     memberId: {
       type: Schema.Types.ObjectId,
       ref: 'Member',
-      index: true,
+      index: true, // Kept: used for queries filtering by memberId only
     },
     userId: {
       type: String,

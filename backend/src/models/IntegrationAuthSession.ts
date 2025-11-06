@@ -34,7 +34,6 @@ const IntegrationAuthSessionSchema = new Schema<IIntegrationAuthSession>(
       type: String,
       required: true,
       unique: true,
-      index: true,
     },
     campaignSlug: {
       type: String,

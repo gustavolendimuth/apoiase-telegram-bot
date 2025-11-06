@@ -19,7 +19,6 @@ const TelegramAuthTokenSchema: Schema = new Schema(
       type: String,
       required: true,
       unique: true,
-      index: true,
     },
     campaignId: {
       type: Schema.Types.ObjectId,

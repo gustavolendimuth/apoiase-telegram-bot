@@ -25,18 +25,16 @@ const MemberSchema = new Schema<IMember>(
       type: Schema.Types.ObjectId,
       ref: 'Integration',
       required: true,
-      index: true,
     },
     supporterEmail: {
       type: String,
       required: true,
       lowercase: true,
-      index: true,
     },
     supporterId: {
       type: String,
       required: true,
-      index: true,
+      index: true, // Kept: not in compound indexes
     },
     telegramUserId: {
       type: String,
@@ -50,7 +48,6 @@ const MemberSchema = new Schema<IMember>(
       type: String,
       enum: ['pending_verification', 'active', 'payment_overdue', 'removed'],
       default: 'pending_verification',
-      index: true,
     },
     joinedAt: {
       type: Date,
