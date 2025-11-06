@@ -14,7 +14,7 @@ import webhookRoutes from './routes/webhookRoutes';
 import campaignRoutes from './routes/campaignRoutes';
 import supportRoutes from './routes/supportRoutes';
 import { setupRecurringJobs } from './jobs/syncMembers';
-import { getFrontendUrl } from './utils/env';
+import { getFrontendUrl, processEnvUrl } from './utils/env';
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -24,8 +24,13 @@ const PORT = process.env.PORT || 3001;
 
 // Middlewares de segurança
 app.use(helmet());
+
+// CORS - configuração com log para debug
+const frontendUrl = getFrontendUrl();
+logger.info(`CORS configurado para: ${frontendUrl}`);
+
 app.use(cors({
-  origin: getFrontendUrl(),
+  origin: frontendUrl,
   credentials: true,
 }));
 
