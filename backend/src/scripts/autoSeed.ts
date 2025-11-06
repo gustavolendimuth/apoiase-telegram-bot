@@ -258,17 +258,23 @@ const sampleCampaigns = [
 async function autoSeed(options: { standalone?: boolean } = {}) {
   const { standalone = false } = options;
 
+  logger.info('🌱 autoSeed iniciado com modo:', { standalone });
+
   try {
     // Só conectar se for executado standalone (direto via npm run seed:auto)
     if (standalone) {
-      console.log('🔌 Conectando ao MongoDB...');
+      logger.info('🔌 Conectando ao MongoDB...');
       await mongoose.connect(MONGODB_URI);
-      console.log('✅ Conectado ao MongoDB!');
+      logger.info('✅ Conectado ao MongoDB!');
+    } else {
+      logger.info('ℹ️  Usando conexão MongoDB existente');
     }
 
     // Verificar se já existem dados
+    logger.info('🔍 Verificando dados existentes...');
     const userCount = await User.countDocuments();
     const campaignCount = await Campaign.countDocuments();
+    logger.info('📊 Contagem atual:', { userCount, campaignCount });
 
     if (userCount > 0 || campaignCount > 0) {
       logger.info('ℹ️  Banco de dados já contém dados:', { userCount, campaignCount });
