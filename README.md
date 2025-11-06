@@ -43,7 +43,7 @@ O **APOIA.se Telegram Bot** resolve o problema de gerenciar manualmente o acesso
 - ✅ **Fase 3**: Frontend Dashboard (UI + Integração)
 - ⏳ **Fase 4**: Deploy (Pendente)
 
-Veja [PROJECT_STATUS.md](PROJECT_STATUS.md) para detalhes completos.
+Veja [ARCHITECTURE.md](ARCHITECTURE.md) para detalhes técnicos completos.
 
 ---
 
@@ -105,32 +105,30 @@ Veja [PROJECT_STATUS.md](PROJECT_STATUS.md) para detalhes completos.
 
 ---
 
-## 📦 Instalação
+## 📦 Instalação e Quick Start
 
 ### Pré-requisitos
 
-- Node.js 18+ ([Download](https://nodejs.org/))
-- Docker e Docker Compose ([Download](https://www.docker.com/))
-- Conta Telegram e Bot Token ([Tutorial](https://core.telegram.org/bots#3-how-do-i-create-a-bot))
-- Conta APOIA.se com acesso à API
+- ✅ **Node.js 18+** ([Download](https://nodejs.org/))
+- ✅ **Docker e Docker Compose** ([Download](https://www.docker.com/))
+- ✅ **Git** ([Download](https://git-scm.com/))
+- 🤖 **Telegram Bot Token** - Obtenha com [@BotFather](https://t.me/BotFather)
 
-### Passo a Passo
+### ⚡ Quick Start (5 minutos)
 
 ```bash
-# 1. Clone o repositório
+# 1. Clone e instale dependências
 git clone https://github.com/gustavolendimuth/apoiase-telegram-bot.git
 cd apoiase-telegram-bot
-
-# 2. Instale as dependências
 npm install
 
-# 3. Configure as variáveis de ambiente
+# 2. Configure as variáveis de ambiente
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env.local
 
-# Edite os arquivos .env com suas credenciais
-nano backend/.env
-nano frontend/.env.local
+# 3. Edite o backend/.env e adicione seu bot token
+# TELEGRAM_BOT_TOKEN=seu-bot-token-aqui
+# JWT_SECRET=gere-uma-chave-aleatoria-segura
 
 # 4. Inicie a aplicação em modo desenvolvimento (com hot reload)
 npm run docker:dev
@@ -140,12 +138,29 @@ docker-compose up -d mongodb redis  # Apenas infra
 npm run dev                          # Backend + Frontend local
 ```
 
-Acesse:
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:3001
-- **Health Check**: http://localhost:3001/health
+✅ **Pronto!** Acesse:
+- 🌐 **Frontend**: http://localhost:3000
+- 🔌 **Backend API**: http://localhost:3001
+- 🏥 **Health Check**: http://localhost:3001/health
 
-Veja [GETTING_STARTED.md](GETTING_STARTED.md) para guia detalhado.
+### 🤖 Configurar Bot do Telegram
+
+1. Abra o Telegram e procure [@BotFather](https://t.me/BotFather)
+2. Envie `/newbot` e siga as instruções
+3. Copie o token fornecido e cole em `backend/.env` → `TELEGRAM_BOT_TOKEN`
+4. Configure comandos com `/setcommands`:
+   ```
+   start - Iniciar verificação
+   help - Ajuda
+   verify - Verificar status de apoio
+   ```
+5. Adicione o bot como **administrador** no seu grupo de teste
+6. Permissões necessárias: ✅ Gerenciar membros, ✅ Criar links de convite
+
+**Como obter o ID do grupo?**
+1. Adicione [@RawDataBot](https://t.me/rawdatabot) ao seu grupo
+2. Copie o `chat.id` (formato: `-100XXXXXXXXXX`)
+3. Remova o @RawDataBot
 
 ---
 
@@ -276,13 +291,10 @@ Quando alguém apoiar sua campanha:
 
 ## 📚 Documentação
 
-- **[PROJECT_STATUS.md](PROJECT_STATUS.md)** - Status detalhado e resumo do projeto
-- **[GETTING_STARTED.md](GETTING_STARTED.md)** - Guia de início rápido
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Documentação da arquitetura
-- **[COMMANDS.md](COMMANDS.md)** - Comandos úteis
-- **[DOCKER_MODES.md](DOCKER_MODES.md)** - Modos desenvolvimento vs produção
-- **[INTEGRATION_FLOW.md](INTEGRATION_FLOW.md)** - Fluxo de integração OAuth com APOIA.se
-- **[APOIA_SE_INTEGRATION_GUIDE.md](APOIA_SE_INTEGRATION_GUIDE.md)** - Guia de integração para equipe APOIA.se
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Arquitetura técnica, fluxos e schemas
+- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Comandos úteis e guia de desenvolvimento
+- **[DEPLOY.md](DEPLOY.md)** - Guia completo de deploy e configuração de produção
+- **[CLAUDE.md](CLAUDE.md)** - Documentação para Claude Code AI
 
 ### Endpoints da API
 
@@ -399,7 +411,7 @@ docker-compose down -v
 docker-compose up -d mongodb redis
 ```
 
-Veja [COMMANDS.md](COMMANDS.md) para lista completa.
+Veja [DEVELOPMENT.md](DEVELOPMENT.md) para lista completa de comandos e guias de desenvolvimento.
 
 ---
 
@@ -417,13 +429,15 @@ Planejado:
 
 ## 🚀 Deploy
 
-> ⚠️ **Fase 4 pendente** - Instruções detalhadas de deploy serão adicionadas
+O projeto está pronto para deploy em produção com configuração automatizada.
 
-Opções sugeridas:
+**Opções recomendadas:**
 - **Backend**: Railway, Render, DigitalOcean, AWS
 - **Frontend**: Vercel, Netlify
 - **Database**: MongoDB Atlas
 - **Redis**: Upstash, Redis Cloud
+
+Veja [DEPLOY.md](DEPLOY.md) para guia completo de deploy no Railway, configuração de variáveis de ambiente, e seed automático do banco de dados.
 
 ---
 
@@ -483,7 +497,7 @@ Distribuído sob a licença MIT. Veja [LICENSE](LICENSE) para mais informações
 - **1 Job** com 2 tarefas recorrentes (sync diário + verificação 6h)
 - **100% TypeScript** (type-safe)
 
-### Funcionalidades Implementadas Recentemente (Novembro 2025)
+### Funcionalidades Implementadas Recentemente (Novembro 2024)
 - ✅ **Integração OAuth-like com APOIA.se** - Fluxo completo de autorização
 - ✅ **Telegram Login Widget** - Autenticação com validação de hash HMAC-SHA256
 - ✅ **Auto-descoberta de grupos Telegram** - Lista automática de grupos onde bot é admin
@@ -500,5 +514,5 @@ Distribuído sob a licença MIT. Veja [LICENSE](LICENSE) para mais informações
 ---
 
 **Versão**: 1.0.0
-**Data**: Janeiro 2025
+**Data**: Novembro 2024
 **Status**: ✅ MVP Completo

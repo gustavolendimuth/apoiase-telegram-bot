@@ -165,7 +165,24 @@ Cron Job              Backend               MongoDB          Telegram
    │◄────────────────────┤                     │                │
 ```
 
-### 5. Fluxo OAuth-like de Integração (APOIA.se → Telegram)
+### 5. Fluxo OAuth-like de Integração (APOIA.se → Telegram) - Detalhado
+
+Este fluxo permite que makers conectem seus grupos Telegram sem configuração manual.
+
+#### Arquitetura
+
+```
+┌─────────────┐         ┌──────────────────┐         ┌─────────────┐
+│  APOIA.se   │────1───▶│  Nossa Aplicação │────2───▶│  Telegram   │
+│  (Maker)    │         │  (Authorization) │         │  (Login)    │
+└─────────────┘         └──────────────────┘         └─────────────┘
+       ▲                          │                          │
+       │                          │                          │
+       └──────────────4───────────┘◀──────────3──────────────┘
+                 (Callback)              (Group Selection)
+```
+
+#### Fluxo Simplificado
 
 ```
 APOIA.se              Integration Service    Telegram API      MongoDB
@@ -615,7 +632,192 @@ GET    /health                         # Status do servidor
 - **Database**: MongoDB Atlas
 - **Cache**: Redis Cloud
 - **Monitoring**: Sentry, LogRocket
+- **CI/CD**: GitHub Actions, GitLab CI
+- **Containerization**: Kubernetes
+- **Load Balancer**: Nginx, Traefik
+- **CDN**: Cloudflare, AWS CloudFront
+- **Documentação**: Notion, Confluence
 
 ---
 
-**Última atualização**: Janeiro 2025
+## 🔗 Guia de Integração para APOIA.se
+
+Esta seção descreve como integrar este serviço ao backend real do APOIA.se.
+
+### Para a Equipe do APOIA.se
+
+#### 1. Adicionar Endpoints ao Backend
+
+Adicione as rotas de integração ao backend do APOIA.se:
+
+```typescript
+// backend/routes/apoiaseIntegrationRoutes.ts
+import apoiaseIntegrationRoutes from './routes/apoiaseIntegrationRoutes';
+
+app.use('/api/campaigns', apoiaseIntegrationRoutes);
+```
+
+**Endpoints disponíveis:**
+- `POST /api/campaigns/:slug/integrations/telegram` - Inicia integração
+- `GET /api/campaigns/:slug/integrations/telegram/callback` - Recebe callback
+- `GET /api/campaigns/:slug/integrations/telegram` - Lista integrações
+- `DELETE /api/campaigns/:slug/integrations/telegram/:id` - Remove integração
+
+#### 2. Criar Página de Integrações
+
+Adicione uma página de integrações na interface do maker:
+
+```typescript
+// pages/campaigns/[slug]/edit/integrations.tsx
+
+export default function CampaignIntegrationsPage() {
+  const { slug } = useParams();
+  const [integrations, setIntegrations] = useState([]);
+
+  const handleConnectTelegram = async () => {
+    const res = await fetch(
+      `/api/campaigns/${slug}/integrations/telegram`,
+      { method: 'POST' }
+    );
+
+    const { redirectUrl } = await res.json();
+    window.location.href = redirectUrl;  // Redireciona para nosso serviço
+  };
+
+  return (
+    <div>
+      <h2>Integrações</h2>
+
+      <div>
+        <h3>Telegram</h3>
+        <p>Conecte um grupo do Telegram para acesso exclusivo aos apoiadores</p>
+        <button onClick={handleConnectTelegram}>
+          Conectar Telegram
+        </button>
+      </div>
+
+      {/* Lista de integrações ativas */}
+      {integrations.map(int => (
+        <div key={int.id}>
+          <p>{int.groupTitle}</p>
+          <button onClick={() => removeIntegration(int.id)}>Remover</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+#### 3. Configurar Variáveis de Ambiente
+
+No backend do APOIA.se:
+
+```env
+TELEGRAM_INTEGRATION_SERVICE_URL=https://telegram-integration.apoia.se
+REDIS_HOST=localhost
+REDIS_PORT=6379
+```
+
+#### 4. Fluxo de Segurança
+
+O sistema usa credenciais temporárias no Redis (1h de validade):
+
+```typescript
+// Backend do APOIA.se gera credenciais temporárias
+const apiKey = crypto.randomBytes(32).toString('base64url');
+const bearerToken = crypto.randomBytes(32).toString('base64url');
+
+await redis.setex(
+  `telegram:integration:${apiKey}`,
+  3600, // 1 hora
+  JSON.stringify({
+    campaignSlug,
+    campaignId,
+    makerId,
+    bearerToken,
+    createdAt: new Date(),
+  })
+);
+```
+
+Nosso serviço valida essas credenciais antes de criar a integração.
+
+#### 5. Deploy do Serviço de Integração
+
+```bash
+# Docker
+docker build -t telegram-integration .
+docker run -p 3001:3001 telegram-integration
+
+# DNS
+telegram-integration.apoia.se → IP do serviço
+
+# Nginx
+server {
+  listen 443 ssl;
+  server_name telegram-integration.apoia.se;
+
+  location / {
+    proxy_pass http://localhost:3001;
+  }
+}
+```
+
+### Arquivos Importantes
+
+**Backend:**
+- [backend/src/routes/apoiaseIntegrationRoutes.ts](backend/src/routes/apoiaseIntegrationRoutes.ts) - Rotas para APOIA.se
+- [backend/src/services/integrationAuthService.ts](backend/src/services/integrationAuthService.ts) - Lógica OAuth
+- [backend/src/services/apoiaseApiService.ts](backend/src/services/apoiaseApiService.ts) - Cliente API APOIA.se
+- [backend/src/models/IntegrationAuthSession.ts](backend/src/models/IntegrationAuthSession.ts) - Sessões temporárias
+
+**Frontend:**
+- [frontend/src/app/integration/authorize/page.tsx](frontend/src/app/integration/authorize/page.tsx) - Página de autorização
+- [frontend/src/components/TelegramGroupSelector.tsx](frontend/src/components/TelegramGroupSelector.tsx) - Seletor de grupo
+
+### Segurança
+
+- ✅ State tokens anti-CSRF (256 bits)
+- ✅ Credenciais temporárias (expira em 1h)
+- ✅ Sessões com timeout (30min)
+- ✅ Hash validation do Telegram (HMAC-SHA256)
+- ✅ Credenciais protegidas (`select: false` no Mongoose)
+
+### API do APOIA.se
+
+O serviço está preparado para integração com a API real:
+
+```typescript
+// Endpoint para verificar apoiadores
+GET https://api.apoia.se/backers/charges/{email}
+
+Headers:
+  x-api-key: {campaign_api_key}
+  authorization: Bearer {campaign_bearer_token}
+
+Response:
+{
+  isBacker: boolean,
+  isPaidThisMonth: boolean,
+  thisMonthPaidValue?: number
+}
+```
+
+**Rate Limits:** 5 req/s, 5000 req/mês (recomendado implementar cache Redis)
+
+---
+
+## 📝 Histórico de Atualizações
+
+### Novembro 2024
+- ✅ Implementado fluxo OAuth-like completo com APOIA.se
+- ✅ Integração com Telegram Login Widget
+- ✅ Auto-descoberta de grupos Telegram
+- ✅ Sistema completo de campanhas e apoios
+- ✅ Dashboard web com Next.js 14
+- ✅ Autenticação JWT completa
+- ✅ 35+ endpoints REST API
+- ✅ 8 modelos de dados (MongoDB)
+- ✅ Deploy preparado para Railway/Render
+
+**Última atualização**: Novembro 2025

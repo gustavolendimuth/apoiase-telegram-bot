@@ -27,22 +27,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 2. **README.md**
    - Project statistics
    - Feature lists
+   - Quick start guide
    - API endpoint summaries
-   - Documentation links
 
 3. **ARCHITECTURE.md**
    - System flows and diagrams
    - Database schemas
    - API endpoint documentation
    - Security patterns
+   - Integration guides
 
-4. **PROJECT_STATUS.md**
-   - Statistics and metrics
-   - Feature implementation status
-   - API endpoint counts
-   - Recent updates section
+4. **DEVELOPMENT.md**
+   - Development commands
+   - Docker workflows
+   - Troubleshooting guides
 
-5. **Other relevant .md files** - Update if changes affect their content
+5. **DEPLOY.md**
+   - Deployment instructions
+   - Environment variables
+   - Production setup
 
 ### Creating New .md Files:
 
@@ -566,11 +569,8 @@ Critical indexes for performance:
 
 ## Documentation Files
 
-- [README.md](README.md) - Complete project overview
-- [ARCHITECTURE.md](ARCHITECTURE.md) - Detailed architecture and flows
-- [PROJECT_STATUS.md](PROJECT_STATUS.md) - Development progress and status
-- [GETTING_STARTED.md](GETTING_STARTED.md) - Quick start guide (5 minutes)
-- [COMMANDS.md](COMMANDS.md) - Comprehensive command reference
-- [DOCKER_MODES.md](DOCKER_MODES.md) - Docker development vs production modes
-- [INTEGRATION_FLOW.md](INTEGRATION_FLOW.md) - OAuth-like integration flow with APOIA.se
-- [APOIA_SE_INTEGRATION_GUIDE.md](APOIA_SE_INTEGRATION_GUIDE.md) - Guide for APOIA.se integration
+- **[README.md](README.md)** - Complete project overview with quick start guide (5 min)
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Detailed architecture, flows, schemas, and APOIA.se integration guide
+- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development commands, Docker modes, workflows, and troubleshooting
+- **[DEPLOY.md](DEPLOY.md)** - Deploy guide (Railway), database seed, backup/restore, and production setup
+- **[CLAUDE.md](CLAUDE.md)** - This file (project instructions for Claude Code AI)
