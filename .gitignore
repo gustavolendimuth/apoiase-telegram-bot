@@ -41,6 +41,11 @@ next-env.d.ts
 logs/
 *.log
 
+# Database backups (contains sensitive data)
+backend/database-exports/
+*.tar.gz
+*.dump
+
 # IDE
 .vscode/
 .idea/

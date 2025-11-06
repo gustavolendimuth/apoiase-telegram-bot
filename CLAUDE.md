@@ -2,9 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## ⚠️ IMPORTANT: Keep This File Updated
+## ⚠️ IMPORTANT: Keep Documentation Updated
 
-**ALWAYS update this file (CLAUDE.md) after making significant changes to the project**, including:
+**ALWAYS update ALL relevant .md files after making significant changes to the project**, including:
 - Adding new models, controllers, services, or routes
 - Creating new API endpoints
 - Implementing new features or workflows
@@ -13,16 +13,50 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Adding new environment variables
 - Modifying key flows or business logic
 
-Update the relevant sections:
-- **Project Stats** - Update file counts, endpoints, components
-- **Backend/Frontend Structure** - Add new files/directories
-- **Data Models** - Document new models or schema changes
-- **Key Flows** - Add or update workflow descriptions
-- **API Endpoints** - Document new or changed endpoints
-- **Environment Variables** - Add new required variables
-- **Recent Updates** - Add a dated entry describing the changes
+### Files to Update:
 
-This ensures the documentation stays current and helpful for future development sessions.
+1. **CLAUDE.md** (this file)
+   - Project Stats - File counts, endpoints, components
+   - Backend/Frontend Structure - New files/directories
+   - Data Models - New models or schema changes
+   - Key Flows - Workflow descriptions
+   - API Endpoints - New or changed endpoints
+   - Environment Variables - Required variables
+   - Recent Updates - Dated changelog entries
+
+2. **README.md**
+   - Project statistics
+   - Feature lists
+   - API endpoint summaries
+   - Documentation links
+
+3. **ARCHITECTURE.md**
+   - System flows and diagrams
+   - Database schemas
+   - API endpoint documentation
+   - Security patterns
+
+4. **PROJECT_STATUS.md**
+   - Statistics and metrics
+   - Feature implementation status
+   - API endpoint counts
+   - Recent updates section
+
+5. **Other relevant .md files** - Update if changes affect their content
+
+### Creating New .md Files:
+
+**ONLY create a new .md file if:**
+- No existing documentation file covers the topic
+- The new content is substantial and warrants a dedicated document
+- It adds value that can't be incorporated into existing files
+
+**DO NOT create new .md files for:**
+- Minor features that can be documented in existing files
+- Temporary documentation
+- Content that belongs in code comments
+
+This ensures documentation stays comprehensive, current, and organized.
 
 ---
 
@@ -411,15 +445,6 @@ Keep commit messages clean and focused on the actual changes made. Use conventio
 - Daily sync job: 02:00 (cron: `0 2 * * *`)
 - Removal check job: Every 6 hours
 - Configured in [backend/src/jobs/syncMembers.ts](backend/src/jobs/syncMembers.ts)
-
-## Verification Service (Real APOIA.se API)
-
-The verification service ([backend/src/services/verificationService.ts](backend/src/services/verificationService.ts)) now integrates with the real APOIA.se API:
-- Uses [apoiaseApiService.ts](backend/src/services/apoiaseApiService.ts) to make API calls
-- Endpoint: `GET /backers/charges/{email}` with campaign-specific credentials
-- Returns: `{ isBacker: boolean, isPaidThisMonth: boolean, thisMonthPaidValue?: number }`
-- Credentials stored securely in Integration model (select: false)
-- Fallback mock mode available for testing when API credentials not configured
 
 ## Common Development Tasks
 

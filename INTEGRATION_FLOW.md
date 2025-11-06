@@ -160,9 +160,47 @@ https://apoia.se/campaigns/slug/integrations/callback
 | POST | `/api/integration/cancel` | Público | Cancela autorização |
 | GET | `/api/integration/callback` | Público | Callback para APOIA.se |
 
-### API do APOIA.se
+### Verificação de Apoiadores
 
-**Endpoint usado:**
+> **⚠️ IMPORTANTE - IMPLEMENTAÇÃO ATUAL:**
+>
+> Atualmente existem **dois modos de verificação** implementados no projeto:
+
+**1. Verificação por Banco de Dados Interno (EM USO ATUALMENTE)**
+
+O sistema usa o banco de dados local (models `User` e `Support`) para verificar apoiadores:
+
+```typescript
+// backend/src/services/verificationService.ts
+async verifySupporterStatus(email: string, campaignId: string) {
+  // Busca User pelo email no banco local
+  // Busca Support ativo para a campanha
+  // Retorna status baseado nos dados internos
+}
+```
+
+**Vantagens:**
+- Não depende de API externa
+- Mais rápido (sem latência de rede)
+- Útil para desenvolvimento e testes
+
+**Desvantagens:**
+- Não reflete mudanças em tempo real do APOIA.se
+- Requer sincronização manual dos dados via webhooks
+
+**2. API do APOIA.se (IMPLEMENTADA, PRONTA PARA USO)**
+
+O serviço `apoiaseApiService` está implementado e configurado:
+
+```typescript
+// backend/src/services/apoiaseApiService.ts
+async checkBacker(email: string, credentials: CampaignCredentials) {
+  // GET ${APOIASE_API_URL}/backers/charges/${email}
+  // Headers: x-api-key, authorization: Bearer
+}
+```
+
+**Endpoint da API Real:**
 ```
 GET https://api.apoia.se/backers/charges/{email}
 
@@ -178,6 +216,11 @@ Response:
 }
 ```
 
+**Para migrar para API do APOIA.se:**
+1. Modificar `verificationService.ts` para usar `apoiaseApiService` ao invés do banco local
+2. Garantir `APOIASE_API_URL=https://api.apoia.se` no `.env` (já configurado)
+3. Implementar cache Redis para otimizar e respeitar rate limits (5 req/s, 5000 req/mês)
+
 ## Variáveis de Ambiente
 
 ### Backend (.env)
@@ -188,7 +231,9 @@ TELEGRAM_BOT_TOKEN=your-bot-token
 TELEGRAM_BOT_USERNAME=your_bot_username  # Usado no Telegram Login Widget
 
 # APOIA.se API
-APOIASE_API_URL=https://api.apoia.se
+APOIASE_API_URL=https://api.apoia.se  # URL da API real (já configurado)
+APOIASE_API_KEY=your-apoiase-api-key  # API key global (opcional)
+APOIASE_WEBHOOK_SECRET=your-webhook-secret  # Para validar webhooks
 
 # Frontend URL (CORS)
 FRONTEND_URL=http://localhost:3000
@@ -236,21 +281,63 @@ NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=your_bot_username
 | Grupo já integrado | 400 | Grupo pertence a outra campanha |
 | Telegram hash inválido | 400 | Dados do Telegram não autênticos |
 
+## Arquitetura de Verificação
+
+**Implementação Atual:**
+
+O projeto atualmente usa **verificação por banco de dados interno** (não usa a API do APOIA.se):
+
+```
+┌─────────────┐         ┌──────────────────┐         ┌─────────────┐
+│  Telegram   │────1───▶│  Backend         │────2───▶│  MongoDB    │
+│  Bot        │         │  (verification)  │         │  (Support)  │
+└─────────────┘         └──────────────────┘         └─────────────┘
+                                 │
+                                 └──────3──────▶ Resposta (hasAccess)
+```
+
+**Fluxo:**
+1. Bot recebe email do apoiador
+2. `verificationService.verifySupporterStatus()` consulta models `User` e `Support`
+3. Retorna status baseado nos dados locais
+
+**Quando migrar para API do APOIA.se:**
+
+O `apoiaseApiService` já está implementado e pronto. Para ativá-lo:
+
+1. Modificar `verificationService.ts`:
+```typescript
+// Trocar de:
+const supporterData = await this.verifySupporterStatus(email, campaignId);
+
+// Para:
+const accessCheck = await apoiaseApiService.checkAccess(email, credentials);
+```
+
+2. O serviço já está configurado para usar `APOIASE_API_URL=https://api.apoia.se`
+3. Adicionar cache Redis para otimizar chamadas
+
 ## Fluxo de Verificação de Apoiador
 
 Após a integração estar ativa:
 
-1. Apoiador envia `/start` no bot
-2. Bot solicita email
-3. Bot busca Integration
-4. `verificationService.verifySupporterStatus()` chama API do APOIA.se
-5. Se `isPaidThisMonth === true`, cria Member e gera link de convite
-6. Apoiador entra no grupo
+1. Apoiador envia `/start` no bot do Telegram
+2. Bot solicita email do apoiador
+3. Bot busca Integration associada à campanha
+4. `verificationService.verifySupporterStatus()` consulta banco de dados local (User + Support)
+5. Se apoio estiver ativo (`status === 'active'` e `paymentStatus === 'up_to_date'`):
+   - Cria Member no banco
+   - Gera link de convite único para o grupo (válido por 24h)
+   - Envia link para o apoiador
+6. Apoiador clica no link e entra no grupo Telegram
 
 ## Próximos Passos (TODO)
 
+- [ ] **Migrar verificação do banco local para API do APOIA.se**
+  - Modificar `verificationService.ts` para usar `apoiaseApiService`
+  - O serviço já está implementado e configurado
+- [ ] Implementar cache Redis para verificações (respeitar rate limits: 5 req/s, 5000 req/mês)
 - [ ] Implementar criptografia das credenciais (AES-256)
-- [ ] Adicionar cache Redis para verificações (reduzir API calls)
 - [ ] Implementar sincronização de reward levels do APOIA.se
 - [ ] Adicionar listagem automática de grupos via Bot API
 - [ ] Implementar webhooks do Telegram para detectar remoções manuais
