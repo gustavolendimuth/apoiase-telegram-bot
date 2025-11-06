@@ -1,9 +1,9 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
-import User from '../src/models/User';
-import Campaign from '../src/models/Campaign';
-import logger from '../src/config/logger';
+import User from '../models/User';
+import Campaign from '../models/Campaign';
+import logger from '../config/logger';
 
 dotenv.config();
 

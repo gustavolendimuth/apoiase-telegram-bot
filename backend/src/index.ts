@@ -14,7 +14,7 @@ import webhookRoutes from './routes/webhookRoutes';
 import campaignRoutes from './routes/campaignRoutes';
 import supportRoutes from './routes/supportRoutes';
 import { setupRecurringJobs } from './jobs/syncMembers';
-import { getFrontendUrl, processEnvUrl } from './utils/env';
+import { getFrontendUrl } from './utils/env';
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -42,7 +42,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/', apiLimiter);
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
@@ -64,6 +64,18 @@ const startServer = async () => {
   try {
     // Conectar ao banco de dados
     await connectDatabase();
+
+    // Executar seed automático se habilitado
+    if (process.env.AUTO_SEED === 'true') {
+      logger.info('AUTO_SEED habilitado - executando seed...');
+      try {
+        const autoSeed = (await import('./scripts/autoSeed')).default;
+        await autoSeed();
+      } catch (error) {
+        logger.error('Erro ao executar seed automático:', error);
+        // Não parar a aplicação se o seed falhar
+      }
+    }
 
     // Iniciar bot do Telegram (não bloquear com await, pois bot.launch() inicia polling)
     if (process.env.TELEGRAM_BOT_TOKEN) {
