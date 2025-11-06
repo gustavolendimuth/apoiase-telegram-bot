@@ -38,9 +38,9 @@ const sampleUsers = [
     roles: ['user'],
   },
   {
-    email: 'admin@example.com',
-    password: 'admin123',
-    name: 'Admin User',
+    email: 'gustavolendimuth@gmail.com',
+    password: 'Luiz1781',
+    name: 'Gustavo Lendimuth',
     roles: ['admin', 'user'],
   },
 ];
