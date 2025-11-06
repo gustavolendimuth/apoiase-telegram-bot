@@ -9,9 +9,6 @@ dotenv.config();
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/apoiase-telegram-bot';
 
-// Flag para controlar se o seed deve rodar automaticamente
-const AUTO_SEED_ENABLED = process.env.AUTO_SEED === 'true';
-
 const sampleUsers = [
   {
     email: 'maker@example.com',
@@ -339,19 +336,14 @@ async function autoSeed(options: { standalone?: boolean } = {}) {
   }
 }
 
-// Executar seed se AUTO_SEED=true ou se for executado diretamente
-if (AUTO_SEED_ENABLED || require.main === module) {
+// Executar seed APENAS se for executado diretamente (não quando importado)
+if (require.main === module) {
   console.log('🌱 Iniciando seed automático...');
-  if (AUTO_SEED_ENABLED) {
-    console.log('ℹ️  AUTO_SEED está habilitado via variável de ambiente');
-  }
   // Passar standalone=true para que o script gerencie sua própria conexão
   autoSeed({ standalone: true }).catch((error) => {
     console.error('❌ Erro fatal no seed:', error);
     process.exit(1);
   });
-} else {
-  console.log('ℹ️  Seed automático desabilitado. Defina AUTO_SEED=true para habilitar.');
 }
 
 export default autoSeed;
