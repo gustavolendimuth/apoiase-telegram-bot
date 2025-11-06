@@ -67,14 +67,17 @@ const startServer = async () => {
 
     // Executar seed automático se habilitado
     if (process.env.AUTO_SEED === 'true') {
-      logger.info('AUTO_SEED habilitado - executando seed...');
+      logger.info('🌱 AUTO_SEED habilitado - executando seed...');
       try {
         const autoSeed = (await import('./scripts/autoSeed')).default;
-        await autoSeed();
+        await autoSeed({ standalone: false });
+        logger.info('✅ Seed concluído com sucesso');
       } catch (error) {
-        logger.error('Erro ao executar seed automático:', error);
+        logger.error('❌ Erro ao executar seed automático:', error);
         // Não parar a aplicação se o seed falhar
       }
+    } else {
+      logger.info('ℹ️  AUTO_SEED não está habilitado (valor: ' + process.env.AUTO_SEED + ')');
     }
 
     // Iniciar bot do Telegram (não bloquear com await, pois bot.launch() inicia polling)
