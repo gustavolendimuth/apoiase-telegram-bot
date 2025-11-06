@@ -258,29 +258,36 @@ const sampleCampaigns = [
   },
 ];
 
-async function autoSeed() {
+async function autoSeed(options: { standalone?: boolean } = {}) {
+  const { standalone = false } = options;
+
   try {
-    console.log('🔌 Conectando ao MongoDB...');
-    await mongoose.connect(MONGODB_URI);
-    console.log('✅ Conectado ao MongoDB!');
+    // Só conectar se for executado standalone (direto via npm run seed:auto)
+    if (standalone) {
+      console.log('🔌 Conectando ao MongoDB...');
+      await mongoose.connect(MONGODB_URI);
+      console.log('✅ Conectado ao MongoDB!');
+    }
 
     // Verificar se já existem dados
     const userCount = await User.countDocuments();
     const campaignCount = await Campaign.countDocuments();
 
     if (userCount > 0 || campaignCount > 0) {
-      console.log('ℹ️  Banco de dados já contém dados:');
-      console.log(`   - ${userCount} usuários`);
-      console.log(`   - ${campaignCount} campanhas`);
-      console.log('⏭️  Pulando seed automático (banco já populado)');
-      await mongoose.connection.close();
+      logger.info('ℹ️  Banco de dados já contém dados:', { userCount, campaignCount });
+      logger.info('⏭️  Pulando seed automático (banco já populado)');
+
+      // Só fechar conexão se foi aberta por este script
+      if (standalone) {
+        await mongoose.connection.close();
+      }
       return;
     }
 
-    console.log('📦 Banco de dados vazio. Iniciando seed...');
+    logger.info('📦 Banco de dados vazio. Iniciando seed...');
 
     // Create users
-    console.log('\n👤 Criando usuários...');
+    logger.info('👤 Criando usuários...');
     const createdUsers = [];
     for (const userData of sampleUsers) {
       const hashedPassword = await bcrypt.hash(userData.password, 10);
@@ -290,11 +297,11 @@ async function autoSeed() {
       });
       await user.save();
       createdUsers.push(user);
-      console.log(`   ✓ Usuário criado: ${user.email}`);
+      logger.info(`✓ Usuário criado: ${user.email}`);
     }
 
     // Create campaigns
-    console.log('\n📢 Criando campanhas...');
+    logger.info('📢 Criando campanhas...');
     for (let i = 0; i < sampleCampaigns.length; i++) {
       const campaignData = sampleCampaigns[i];
       const maker = createdUsers[i % createdUsers.length];
@@ -305,24 +312,30 @@ async function autoSeed() {
       });
 
       await campaign.save();
-      console.log(`   ✓ Campanha criada: ${campaign.title} (${campaign.slug})`);
+      logger.info(`✓ Campanha criada: ${campaign.title} (${campaign.slug})`);
     }
 
-    console.log('\n✅ Seed automático concluído com sucesso!');
-    console.log(`\n📊 Resumo:`);
-    console.log(`   ${createdUsers.length} usuários criados`);
-    console.log(`   ${sampleCampaigns.length} campanhas criadas`);
-    console.log(`\n👤 Credenciais para teste:`);
-    sampleUsers.forEach((user) => {
-      console.log(`   Email: ${user.email} | Senha: ${user.password}`);
+    logger.info('✅ Seed automático concluído com sucesso!');
+    logger.info('📊 Resumo:', {
+      usuarios: createdUsers.length,
+      campanhas: sampleCampaigns.length,
     });
-    console.log('\n🌐 Use estas credenciais para fazer login no frontend');
+    logger.info('👤 Credenciais para teste:');
+    sampleUsers.forEach((user) => {
+      logger.info(`   Email: ${user.email} | Senha: ${user.password}`);
+    });
 
-    await mongoose.connection.close();
-    console.log('\n🔌 Conexão com MongoDB encerrada');
+    // Só fechar conexão se foi aberta por este script
+    if (standalone) {
+      await mongoose.connection.close();
+      logger.info('🔌 Conexão com MongoDB encerrada');
+    }
   } catch (error) {
-    console.error('❌ Erro ao executar seed automático:', error);
-    process.exit(1);
+    logger.error('❌ Erro ao executar seed automático:', error);
+    if (standalone) {
+      process.exit(1);
+    }
+    throw error;
   }
 }
 
@@ -332,7 +345,8 @@ if (AUTO_SEED_ENABLED || require.main === module) {
   if (AUTO_SEED_ENABLED) {
     console.log('ℹ️  AUTO_SEED está habilitado via variável de ambiente');
   }
-  autoSeed().catch((error) => {
+  // Passar standalone=true para que o script gerencie sua própria conexão
+  autoSeed({ standalone: true }).catch((error) => {
     console.error('❌ Erro fatal no seed:', error);
     process.exit(1);
   });
