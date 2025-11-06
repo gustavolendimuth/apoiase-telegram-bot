@@ -66,7 +66,6 @@ const MemberSchema = new Schema<IMember>(
     },
     inviteToken: {
       type: String,
-      sparse: true,
     },
     inviteExpiresAt: {
       type: Date,
