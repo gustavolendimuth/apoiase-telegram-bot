@@ -125,10 +125,32 @@ function IntegrationAuthorizePageContent() {
       if (stateToken) {
         await api.post('/api/integration/cancel', { stateToken });
       }
-      window.close();
+
+      // Tentar fechar a janela (funciona se foi aberta via window.open)
+      if (window.opener) {
+        window.close();
+      } else {
+        // Se não for popup, redirecionar para minhas campanhas
+        router.push('/minhas-campanhas');
+      }
     } catch (err) {
       console.error('Erro ao cancelar:', err);
+
+      // Em caso de erro, também tentar fechar ou redirecionar
+      if (window.opener) {
+        window.close();
+      } else {
+        router.push('/minhas-campanhas');
+      }
+    }
+  };
+
+  const handleCloseError = () => {
+    // Função para fechar quando há erro (não tenta cancelar via API)
+    if (window.opener) {
       window.close();
+    } else {
+      router.push('/minhas-campanhas');
     }
   };
 
@@ -195,7 +217,7 @@ function IntegrationAuthorizePageContent() {
           <div className="text-red-500 text-5xl mb-4">✗</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Erro na Integração</h1>
           <p className="text-gray-600 mb-6">{error}</p>
-          <Button onClick={handleCancel} variant="outline" fullWidth>
+          <Button onClick={handleCloseError} variant="outline" fullWidth>
             Fechar
           </Button>
         </Card>
