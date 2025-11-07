@@ -183,11 +183,18 @@ export class TelegramService {
             return;
           }
 
+          await ctx.reply('⏳ Registrando grupo no sistema...');
+
           const result = await this.groupDiscoveryService.discoverGroup(chat.id.toString());
 
           if (!result) {
             logger.error('discoverGroup retornou null', { groupId: chat.id });
-            await ctx.reply('❌ Erro ao registrar grupo. O bot precisa ser admin com:\n• Manage chat\n• Invite users via link');
+            await ctx.reply(
+              `❌ *Erro ao registrar grupo*\n\n` +
+              `As permissões estão OK, mas houve um erro interno.\n` +
+              `Por favor, contate o suporte técnico.`,
+              { parse_mode: 'Markdown' }
+            );
             return;
           }
 
@@ -197,8 +204,10 @@ export class TelegramService {
             `✅ *Grupo registrado com sucesso!*\n\n` +
             `📋 Informações:\n` +
             `• ID: \`${chat.id}\`\n` +
-            `• Nome: ${groupTitle}\n\n` +
-            `Agora você pode selecioná-lo ao criar uma integração!`,
+            `• Nome: ${groupTitle}\n` +
+            `• Manage Chat: ${result.canManageChat ? '✅' : '❌'}\n` +
+            `• Invite Users: ${result.canInviteUsers ? '✅' : '❌'}\n\n` +
+            `Agora acesse ${process.env.FRONTEND_URL || 'o site'} e clique em "Recarregar Grupos"!`,
             { parse_mode: 'Markdown' }
           );
 
