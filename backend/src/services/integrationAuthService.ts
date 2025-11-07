@@ -248,20 +248,25 @@ export class IntegrationAuthService {
       try {
         const telegramService = (await import('./telegramService')).default;
         const bot = telegramService.getBot();
-        const chat = await bot.telegram.getChat(groupId);
 
-        const memberCount = 'members_count' in chat ? (chat.members_count as number | undefined) : undefined;
+        if (!bot) {
+          logger.error('Bot do Telegram não está disponível');
+        } else {
+          const chat = await bot.telegram.getChat(groupId);
 
-        if (memberCount !== undefined && memberCount > 1) {
-          // Grupo tem membros além do bot
-          warning = `⚠️ ATENÇÃO: Este grupo possui ${memberCount} membros. Recomendamos criar um novo grupo vazio para melhor controle de acesso.`;
+          const memberCount = 'members_count' in chat ? (chat.members_count as number | undefined) : undefined;
 
-          logger.warn('Grupo selecionado possui membros existentes', {
-            stateToken,
-            groupId,
-            groupTitle,
-            memberCount,
-          });
+          if (memberCount !== undefined && memberCount > 1) {
+            // Grupo tem membros além do bot
+            warning = `⚠️ ATENÇÃO: Este grupo possui ${memberCount} membros. Recomendamos criar um novo grupo vazio para melhor controle de acesso.`;
+
+            logger.warn('Grupo selecionado possui membros existentes', {
+              stateToken,
+              groupId,
+              groupTitle,
+              memberCount,
+            });
+          }
         }
       } catch (chatError: any) {
         logger.error('Erro ao verificar membros do grupo', {
