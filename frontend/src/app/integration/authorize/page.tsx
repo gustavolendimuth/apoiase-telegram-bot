@@ -218,6 +218,30 @@ function IntegrationAuthorizePageContent() {
         {/* Step 1: Telegram Login */}
         {step === 'telegram_auth' && (
           <div className="space-y-6">
+            {/* Instruções preliminares */}
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <h3 className="font-semibold text-purple-900 mb-2 flex items-center gap-2">
+                <span className="text-xl">📋</span>
+                Antes de Começar
+              </h3>
+              <div className="text-sm text-purple-800 space-y-2">
+                <p className="font-semibold">
+                  Esta integração conectará sua campanha a um grupo exclusivo do Telegram para apoiadores.
+                </p>
+                <div className="bg-white border border-purple-300 rounded p-3 space-y-2">
+                  <p className="font-semibold">✓ Você precisará:</p>
+                  <ul className="list-disc list-inside ml-2 space-y-1">
+                    <li>Criar um <strong>novo grupo vazio</strong> no Telegram</li>
+                    <li>Adicionar nosso bot como administrador do grupo</li>
+                    <li>Conceder permissões para gerenciar e convidar membros</li>
+                  </ul>
+                </div>
+                <p className="text-xs italic">
+                  💡 Dica: Crie o grupo agora, abra o Telegram em outra aba enquanto prossegue com a integração.
+                </p>
+              </div>
+            </div>
+
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h2 className="font-semibold text-blue-900 mb-2">
                 Passo 1: Autentique com o Telegram

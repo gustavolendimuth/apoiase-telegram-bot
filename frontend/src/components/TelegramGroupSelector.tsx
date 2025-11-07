@@ -17,6 +17,7 @@ interface AvailableGroup {
   title: string;
   type: 'group' | 'supergroup' | 'channel';
   memberCount?: number;
+  hasExistingMembers?: boolean;
 }
 
 export function TelegramGroupSelector({
@@ -82,11 +83,17 @@ export function TelegramGroupSelector({
       setLoading(true);
       setError(null);
 
-      await api.post('/api/integration/select-group', {
+      const response = await api.post('/api/integration/select-group', {
         stateToken,
         groupId,
         groupTitle,
       });
+
+      // Mostrar warning se o grupo tiver membros existentes
+      if (response.data.warning) {
+        console.warn('Aviso do backend:', response.data.warning);
+        // O aviso já é mostrado visualmente no card do grupo
+      }
 
       onGroupSelected();
     } catch (err: any) {
@@ -118,11 +125,21 @@ export function TelegramGroupSelector({
     <div className="space-y-6">
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h2 className="font-semibold text-blue-900 mb-2">
-          Passo 2: Selecione o Grupo do Telegram
+          Passo 2: Crie e Selecione um Grupo do Telegram
         </h2>
-        <p className="text-sm text-blue-700">
-          Selecione um grupo onde o bot é administrador para conectar à sua campanha.
+        <p className="text-sm text-blue-700 mb-3">
+          <strong>⚠️ IMPORTANTE:</strong> Recomendamos criar um <strong>novo grupo vazio</strong> para esta integração.
         </p>
+        <div className="bg-white border border-blue-300 rounded-lg p-3 text-sm text-blue-900 space-y-2">
+          <p className="font-semibold">Como criar um novo grupo no Telegram:</p>
+          <ol className="list-decimal list-inside space-y-1 ml-2">
+            <li>Abra o Telegram no seu celular ou computador</li>
+            <li>Clique em "Novo Grupo" ou "New Group"</li>
+            <li>Dê um nome ao grupo (ex: "Apoiadores - [Nome da Campanha]")</li>
+            <li>Não adicione nenhum membro ainda - deixe vazio</li>
+            <li>Após criar, adicione o bot como administrador (use o botão abaixo)</li>
+          </ol>
+        </div>
       </div>
 
       {error && (
@@ -192,40 +209,70 @@ export function TelegramGroupSelector({
       ) : (
         <>
           <div className="space-y-3">
-            {groups.map((group) => (
-              <Card
-                key={group.id}
-                className={`p-4 cursor-pointer transition-all hover:border-blue-400 ${
-                  selectedGroupId === group.id ? 'border-blue-500 bg-blue-50' : ''
-                }`}
-                onClick={() => setSelectedGroupId(group.id)}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">{group.title}</h3>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-xs text-gray-500 uppercase">
-                        {group.type === 'supergroup' ? 'Supergrupo' : group.type === 'channel' ? 'Canal' : 'Grupo'}
-                      </span>
-                      {group.memberCount && (
-                        <span className="text-xs text-gray-500">
-                          {group.memberCount} membros
+            {groups.map((group) => {
+              const hasMembers = group.hasExistingMembers || (group.memberCount !== undefined && group.memberCount > 1);
+              const isRecommended = !hasMembers;
+
+              return (
+                <Card
+                  key={group.id}
+                  className={`p-4 cursor-pointer transition-all ${
+                    hasMembers
+                      ? 'border-yellow-300 hover:border-yellow-400'
+                      : 'border-green-300 hover:border-green-400'
+                  } ${
+                    selectedGroupId === group.id
+                      ? hasMembers
+                        ? 'border-yellow-500 bg-yellow-50'
+                        : 'border-green-500 bg-green-50'
+                      : ''
+                  }`}
+                  onClick={() => setSelectedGroupId(group.id)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-gray-900">{group.title}</h3>
+                        {isRecommended && (
+                          <span className="px-2 py-0.5 text-xs font-semibold text-green-700 bg-green-100 rounded-full">
+                            ✓ Recomendado
+                          </span>
+                        )}
+                        {hasMembers && (
+                          <span className="px-2 py-0.5 text-xs font-semibold text-yellow-700 bg-yellow-100 rounded-full">
+                            ⚠️ Tem membros
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-xs text-gray-500 uppercase">
+                          {group.type === 'supergroup' ? 'Supergrupo' : group.type === 'channel' ? 'Canal' : 'Grupo'}
                         </span>
+                        {group.memberCount !== undefined && (
+                          <span className={`text-xs ${hasMembers ? 'text-yellow-600 font-medium' : 'text-gray-500'}`}>
+                            {group.memberCount} {group.memberCount === 1 ? 'membro' : 'membros'}
+                          </span>
+                        )}
+                      </div>
+                      {hasMembers && (
+                        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                          <strong>Aviso:</strong> Este grupo já possui membros. Membros existentes não passaram pela verificação de apoio e podem não ter acesso adequado.
+                        </div>
                       )}
+                      <p className="text-xs text-gray-400 mt-1">ID: {group.id}</p>
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">ID: {group.id}</p>
+                    <div className="ml-4">
+                      <input
+                        type="radio"
+                        checked={selectedGroupId === group.id}
+                        onChange={() => setSelectedGroupId(group.id)}
+                        className="w-5 h-5 text-blue-600"
+                      />
+                    </div>
                   </div>
-                  <div className="ml-4">
-                    <input
-                      type="radio"
-                      checked={selectedGroupId === group.id}
-                      onChange={() => setSelectedGroupId(group.id)}
-                      className="w-5 h-5 text-blue-600"
-                    />
-                  </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
 
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">

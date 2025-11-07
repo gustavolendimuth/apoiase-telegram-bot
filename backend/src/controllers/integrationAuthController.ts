@@ -132,6 +132,7 @@ export class IntegrationAuthController {
       res.json({
         success: true,
         message: 'Grupo selecionado com sucesso',
+        warning: result.warning,
       });
     } catch (error: any) {
       logger.error('Erro ao selecionar grupo', { error: error.message });
@@ -287,6 +288,7 @@ export class IntegrationAuthController {
           title: g.title,
           type: g.type,
           memberCount: g.memberCount,
+          hasExistingMembers: g.memberCount !== undefined && g.memberCount > 1, // >1 porque bot conta como membro
         })),
       });
     } catch (error: any) {
