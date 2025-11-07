@@ -7,10 +7,13 @@ const router = Router();
 // Todas as rotas de integração requerem autenticação
 router.use(authenticateToken);
 
+// Rotas específicas DEVEM vir ANTES das rotas genéricas com parâmetros (:id)
+router.get('/add-bot-url', integrationController.getAddBotUrl);
+router.get('/telegram-link/:campaignId', integrationController.getTelegramLink);
+
 // Rotas CRUD (ownership verification done in controller)
 router.post('/', integrationController.create);
 router.get('/', integrationController.list);
-router.get('/telegram-link/:campaignId', integrationController.getTelegramLink);
 router.get('/:id', integrationController.getById);
 router.put('/:id', integrationController.update);
 router.delete('/:id', integrationController.delete);

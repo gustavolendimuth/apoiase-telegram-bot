@@ -135,23 +135,48 @@ function IntegrationAuthorizePageContent() {
   useEffect(() => {
     // Carregar script do Telegram Login Widget
     if (step === 'telegram_auth' && typeof window !== 'undefined') {
-      const script = document.createElement('script');
-      script.src = 'https://telegram.org/js/telegram-widget.js?22';
-      script.setAttribute('data-telegram-login', process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || '');
-      script.setAttribute('data-size', 'large');
-      script.setAttribute('data-radius', '8');
-      script.setAttribute('data-request-access', 'write');
-      script.async = true;
+      const loadTelegramWidget = async () => {
+        let botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
+        
+        // Se não estiver configurado na variável de ambiente, tentar buscar do backend
+        if (!botUsername) {
+          try {
+            const response = await api.get('/api/bot/info');
+            if (response.data.botUsername) {
+              botUsername = response.data.botUsername;
+            }
+          } catch (err) {
+            console.error('Erro ao obter bot username do backend:', err);
+          }
+        }
+        
+        // Validar se o bot username está disponível
+        if (!botUsername) {
+          setError('Bot username não configurado. Por favor, configure NEXT_PUBLIC_TELEGRAM_BOT_USERNAME nas variáveis de ambiente do frontend ou verifique se o bot está configurado no backend.');
+          setLoading(false);
+          return;
+        }
 
-      // Callback global para o widget
-      (window as any).onTelegramAuth = handleTelegramAuth;
-      script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+        const script = document.createElement('script');
+        script.src = 'https://telegram.org/js/telegram-widget.js?22';
+        script.setAttribute('data-telegram-login', botUsername);
+        script.setAttribute('data-size', 'large');
+        script.setAttribute('data-radius', '8');
+        script.setAttribute('data-request-access', 'write');
+        script.async = true;
 
-      const container = document.getElementById('telegram-login-container');
-      if (container) {
-        container.innerHTML = '';
-        container.appendChild(script);
-      }
+        // Callback global para o widget
+        (window as any).onTelegramAuth = handleTelegramAuth;
+        script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+
+        const container = document.getElementById('telegram-login-container');
+        if (container) {
+          container.innerHTML = '';
+          container.appendChild(script);
+        }
+      };
+
+      loadTelegramWidget();
     }
   }, [step, stateToken]);
 

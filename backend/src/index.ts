@@ -46,6 +46,34 @@ app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Endpoint público para obter informações do bot (para o frontend)
+app.get('/api/bot/info', async (_req, res) => {
+  try {
+    const telegramService = (await import('./services/telegramService')).default;
+    const bot = telegramService.getBot();
+    
+    if (!bot) {
+      return res.status(503).json({ 
+        error: 'Bot não disponível',
+        botUsername: null 
+      });
+    }
+
+    const botInfo = await bot.telegram.getMe();
+    res.json({ 
+      botUsername: botInfo.username,
+      botId: botInfo.id,
+      botFirstName: botInfo.first_name
+    });
+  } catch (error: any) {
+    logger.error('Erro ao obter informações do bot:', error);
+    res.status(500).json({ 
+      error: 'Erro ao obter informações do bot',
+      botUsername: null 
+    });
+  }
+});
+
 // Rotas da API
 app.use('/api/auth', authRoutes);
 app.use('/api/integrations', integrationRoutes);

@@ -534,6 +534,48 @@ export class IntegrationController {
       });
     }
   }
+
+  /**
+   * Obter URL para adicionar o bot ao grupo
+   * GET /api/integrations/add-bot-url
+   */
+  async getAddBotUrl(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Não autenticado' });
+        return;
+      }
+
+      const botUsername = process.env.TELEGRAM_BOT_USERNAME;
+      if (!botUsername) {
+        res.status(500).json({
+          error: 'TELEGRAM_BOT_USERNAME não configurado',
+        });
+        return;
+      }
+
+      // URL com permissões necessárias:
+      // - invite_users: convidar usuários
+      // - manage_chat: gerenciar chat (necessário para criar links de convite)
+      // - ban_users: banir usuários
+      const addBotUrl = `https://t.me/${botUsername}?startgroup=true&admin=invite_users+manage_chat+ban_users`;
+
+      res.json({
+        addBotUrl,
+        instructions: [
+          'Clique no link para adicionar o bot ao seu grupo',
+          'Selecione o grupo que deseja integrar',
+          'Conceda as permissões de administrador solicitadas',
+          'Após adicionar, clique em "Recarregar Grupos" para atualizar a lista',
+        ],
+      });
+    } catch (error: any) {
+      logger.error('Erro ao gerar URL de adicionar bot:', error);
+      res.status(500).json({
+        error: error.message || 'Erro ao gerar URL',
+      });
+    }
+  }
 }
 
 export default new IntegrationController();
