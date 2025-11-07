@@ -22,6 +22,10 @@ dotenv.config();
 const app: Application = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust proxy - necessário para Railway e outros serviços atrás de proxy
+// Permite que o Express confie nos headers X-Forwarded-* enviados pelo proxy
+app.set('trust proxy', 1);
+
 // Middlewares de segurança
 app.use(helmet());
 
