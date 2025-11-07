@@ -4,6 +4,7 @@ import Member from '../models/Member';
 import Integration from '../models/Integration';
 import EventLog from '../models/EventLog';
 import verificationService from './verificationService';
+import TelegramGroupDiscoveryService from './telegramGroupDiscoveryService';
 
 /**
  * Serviço do Bot do Telegram
@@ -13,6 +14,7 @@ export class TelegramService {
   private bot: Telegraf | null = null;
   private botToken: string;
   private initialized: boolean = false;
+  private groupDiscoveryService: TelegramGroupDiscoveryService | null = null;
 
   constructor() {
     this.botToken = process.env.TELEGRAM_BOT_TOKEN || '';
@@ -24,6 +26,7 @@ export class TelegramService {
 
     try {
       this.bot = new Telegraf(this.botToken);
+      this.groupDiscoveryService = new TelegramGroupDiscoveryService(this.botToken);
       this.setupCommands();
       this.setupHandlers();
       this.initialized = true;
@@ -508,6 +511,13 @@ export class TelegramService {
    */
   getBot(): Telegraf | null {
     return this.bot;
+  }
+
+  /**
+   * Retorna instância do serviço de descoberta de grupos
+   */
+  getGroupDiscoveryService(): TelegramGroupDiscoveryService | null {
+    return this.groupDiscoveryService;
   }
 }
 

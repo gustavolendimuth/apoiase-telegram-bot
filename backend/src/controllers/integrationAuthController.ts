@@ -267,9 +267,15 @@ export class IntegrationAuthController {
         });
       }
 
-      // Obter serviço de descoberta de grupos
-      const TelegramGroupDiscoveryService = (await import('../services/telegramGroupDiscoveryService')).default;
-      const groupDiscovery = new TelegramGroupDiscoveryService(process.env.TELEGRAM_BOT_TOKEN || '');
+      // Obter serviço de descoberta de grupos da instância singleton do TelegramService
+      const telegramService = (await import('../services/telegramService')).default;
+      const groupDiscovery = telegramService.getGroupDiscoveryService();
+
+      if (!groupDiscovery) {
+        return res.status(500).json({
+          error: 'Serviço de descoberta de grupos não disponível',
+        });
+      }
 
       // Listar grupos disponíveis
       const groups = await groupDiscovery.listAvailableGroups();

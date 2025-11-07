@@ -131,9 +131,59 @@ export class TelegramGroupDiscoveryService {
   }
 
   /**
+   * Força a descoberta de grupos através de updates recentes
+   * Busca os últimos updates do Telegram para descobrir grupos
+   */
+  async refreshGroups(): Promise<void> {
+    try {
+      // Buscar updates recentes (últimos 100)
+      const updates = await this.bot.telegram.getUpdates(
+        0, // offset
+        100, // limit
+        0, // timeout
+        ['message', 'my_chat_member', 'chat_member'] // allowed_updates
+      );
+
+      const groupIds = new Set<string>();
+
+      // Extrair IDs de grupos dos updates
+      for (const update of updates) {
+        let chatId: number | undefined;
+
+        if ('message' in update && update.message) {
+          chatId = update.message.chat.id;
+        } else if ('my_chat_member' in update && update.my_chat_member) {
+          chatId = update.my_chat_member.chat.id;
+        } else if ('chat_member' in update && update.chat_member) {
+          chatId = update.chat_member.chat.id;
+        }
+
+        if (chatId && chatId < 0) { // IDs negativos são grupos
+          groupIds.add(chatId.toString());
+        }
+      }
+
+      // Descobrir cada grupo encontrado
+      for (const groupId of groupIds) {
+        await this.discoverGroup(groupId);
+      }
+
+      logger.info('Refresh de grupos concluído', {
+        totalUpdates: updates.length,
+        groupsFound: groupIds.size
+      });
+    } catch (error: any) {
+      logger.error('Erro ao fazer refresh de grupos', { error: error.message });
+    }
+  }
+
+  /**
    * Lista todos os grupos descobertos onde o bot é administrador
    */
   async listAvailableGroups(): Promise<DiscoveredGroup[]> {
+    // Fazer refresh antes de listar para garantir que temos os grupos mais recentes
+    await this.refreshGroups();
+
     return Array.from(this.discoveredGroups.values())
       .filter(group => group.canInviteUsers && group.canManageChat);
   }
