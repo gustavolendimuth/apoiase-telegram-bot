@@ -210,39 +210,62 @@ export class TelegramGroupDiscoveryService {
    * usando o comando /register no grupo do Telegram, pois getUpdates() não funciona.
    *
    * Grupos são carregados do banco de dados para persistir entre restarts.
+   * Valida se os grupos ainda existem no Telegram antes de retornar.
    */
   async listAvailableGroups(): Promise<DiscoveredGroup[]> {
+    const validGroups: DiscoveredGroup[] = [];
+    const DiscoveredGroupModel = (await import('../models/DiscoveredGroup')).default;
+
     // Buscar grupos descobertos do banco de dados
     try {
-      const DiscoveredGroupModel = (await import('../models/DiscoveredGroup')).default;
       const dbGroups = await DiscoveredGroupModel.find({
         canInviteUsers: true,
         canManageChat: true,
       });
 
-      // Popular cache em memória com grupos do banco
+      logger.info('Grupos carregados do banco de dados', {
+        total: dbGroups.length,
+      });
+
+      // Validar cada grupo verificando se ainda existe no Telegram
       for (const dbGroup of dbGroups) {
-        if (!this.discoveredGroups.has(dbGroup.groupId)) {
-          this.discoveredGroups.set(dbGroup.groupId, {
+        try {
+          // Tentar obter informações do grupo
+          await this.bot.telegram.getChat(dbGroup.groupId);
+
+          // Se conseguiu, o grupo existe - adicionar à lista válida
+          const group: DiscoveredGroup = {
             id: dbGroup.groupId,
             title: dbGroup.title,
             type: dbGroup.type,
             canPostMessages: dbGroup.canPostMessages,
             canManageChat: dbGroup.canManageChat,
             canInviteUsers: dbGroup.canInviteUsers,
+          };
+
+          this.discoveredGroups.set(dbGroup.groupId, group);
+          validGroups.push(group);
+        } catch (error: any) {
+          // Grupo não existe mais ou bot foi removido - limpar do banco
+          logger.warn('Grupo não existe mais ou bot foi removido - limpando do banco', {
+            groupId: dbGroup.groupId,
+            title: dbGroup.title,
+            error: error.message,
           });
+
+          await DiscoveredGroupModel.deleteOne({ groupId: dbGroup.groupId });
+          this.discoveredGroups.delete(dbGroup.groupId);
         }
       }
 
-      logger.info('Grupos carregados do banco de dados', {
-        total: dbGroups.length,
+      logger.info('Grupos válidos após validação', {
+        total: validGroups.length,
       });
     } catch (error: any) {
       logger.error('Erro ao carregar grupos do banco de dados', { error: error.message });
     }
 
-    return Array.from(this.discoveredGroups.values())
-      .filter(group => group.canInviteUsers && group.canManageChat);
+    return validGroups;
   }
 
   /**
