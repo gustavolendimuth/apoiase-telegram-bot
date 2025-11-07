@@ -11,7 +11,10 @@ export interface IIntegration extends Document {
   // Credenciais da campanha no APOIA.se (criptografadas)
   apoiaseApiKey?: string;
   apoiaseBearerToken?: string;
-  rewardLevels: string[]; // IDs dos níveis de recompensa que dão acesso
+  // Controle de acesso (escolher um dos dois modos)
+  accessMode: 'reward_levels' | 'min_amount'; // Modo de controle de acesso
+  rewardLevels?: string[]; // IDs dos níveis de recompensa que dão acesso (usado quando accessMode = 'reward_levels')
+  minAmount?: number; // Valor mínimo de contribuição para acesso (usado quando accessMode = 'min_amount')
   isActive: boolean;
   createdBy: Types.ObjectId; // Reference to User (maker)
   createdAt: Date;
@@ -58,9 +61,21 @@ const IntegrationSchema = new Schema<IIntegration>(
       required: false,
       select: false, // Não retornar por padrão (segurança)
     },
+    accessMode: {
+      type: String,
+      enum: ['reward_levels', 'min_amount'],
+      default: 'min_amount', // Default para o novo modo mais simples
+      required: true,
+    },
     rewardLevels: {
       type: [String],
       default: [],
+      required: false,
+    },
+    minAmount: {
+      type: Number,
+      required: false,
+      min: 0,
     },
     isActive: {
       type: Boolean,

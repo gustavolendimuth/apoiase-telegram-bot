@@ -107,15 +107,7 @@ export class WebhookController {
       }
 
       for (const integration of integrations) {
-        // Verificar se o rewardLevel dá acesso
-        if (
-          integration.rewardLevels.length > 0 &&
-          !integration.rewardLevels.includes(rewardLevel)
-        ) {
-          continue;
-        }
-
-        // Verificar acesso
+        // Verificar acesso (agora inclui verificação de rewardLevels ou minAmount)
         const accessCheck = await verificationService.checkSupporterAccess(
           supporterEmail,
           integration._id.toString()

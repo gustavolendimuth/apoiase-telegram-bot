@@ -13,6 +13,7 @@ interface SupporterData {
   email: string;
   campaignId: string;
   rewardLevel: string;
+  amount: number; // Valor da contribuição
   status: 'active' | 'inactive' | 'cancelled';
   paymentStatus: 'up_to_date' | 'overdue' | 'failed';
   lastPaymentDate?: Date;
@@ -59,6 +60,7 @@ export class VerificationService {
         email: user.email,
         campaignId: campaignId,
         rewardLevel: support.rewardLevelId || 'basic',
+        amount: support.amount, // Incluir valor da contribuição
         status: isActive ? 'active' : support.status === 'cancelled' ? 'cancelled' : 'inactive',
         paymentStatus: isPaymentOk ? 'up_to_date' : support.status === 'payment_failed' ? 'failed' : 'overdue',
         lastPaymentDate: support.lastPaymentDate,
@@ -136,16 +138,29 @@ export class VerificationService {
         };
       }
 
-      // Verificar se o nível de recompensa dá acesso
-      if (
-        integration.rewardLevels.length > 0 &&
-        !integration.rewardLevels.includes(supporterData.rewardLevel)
-      ) {
-        return {
-          hasAccess: false,
-          reason: 'Nível de recompensa não dá acesso a este grupo',
-          supporterData,
-        };
+      // Verificar acesso baseado no modo configurado
+      if (integration.accessMode === 'reward_levels') {
+        // Modo por níveis de recompensa específicos
+        if (
+          integration.rewardLevels &&
+          integration.rewardLevels.length > 0 &&
+          !integration.rewardLevels.includes(supporterData.rewardLevel)
+        ) {
+          return {
+            hasAccess: false,
+            reason: 'Nível de recompensa não dá acesso a este grupo',
+            supporterData,
+          };
+        }
+      } else if (integration.accessMode === 'min_amount') {
+        // Modo por valor mínimo de contribuição
+        if (integration.minAmount && supporterData.amount < integration.minAmount) {
+          return {
+            hasAccess: false,
+            reason: `Valor de contribuição insuficiente. Mínimo: R$ ${integration.minAmount.toFixed(2)}`,
+            supporterData,
+          };
+        }
       }
 
       return {

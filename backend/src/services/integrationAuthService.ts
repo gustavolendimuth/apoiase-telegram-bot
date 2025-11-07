@@ -371,7 +371,7 @@ export class IntegrationAuthService {
         };
       }
 
-      // 6. Criar integração
+      // 6. Criar integração com accessMode padrão de 'min_amount' (qualquer valor)
       const apiKey = integrationService.generateApiKey();
 
       const integration = await Integration.create({
@@ -381,9 +381,13 @@ export class IntegrationAuthService {
         telegramGroupType: 'supergroup',
         telegramGroupTitle: session.selectedGroupTitle!,
         apiKey,
+        accessMode: 'min_amount', // Modo padrão: por valor mínimo
+        minAmount: 0, // Valor mínimo inicial (permitir qualquer valor)
         rewardLevels: [],
         isActive: true,
         createdBy: makerId,
+        apoiaseApiKey: session.apoiaseApiKey,
+        apoiaseBearerToken: session.apoiaseBearerToken,
       });
 
       // 6. Marcar sessão como completa

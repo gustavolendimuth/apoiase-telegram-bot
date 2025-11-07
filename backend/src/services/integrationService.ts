@@ -48,8 +48,12 @@ export class IntegrationService {
   async createIntegration(
     campaignId: string,
     telegramGroupId: string,
-    rewardLevels: string[],
-    createdBy: string
+    createdBy: string,
+    options: {
+      accessMode: 'reward_levels' | 'min_amount';
+      rewardLevels?: string[];
+      minAmount?: number;
+    }
   ): Promise<IIntegration> {
     try {
       // Verificar se já existe integração para este grupo
@@ -78,7 +82,9 @@ export class IntegrationService {
         telegramGroupType: chat.type as 'group' | 'supergroup' | 'channel',
         telegramGroupTitle: chatTitle,
         apiKey,
-        rewardLevels,
+        accessMode: options.accessMode,
+        rewardLevels: options.rewardLevels || [],
+        minAmount: options.minAmount,
         isActive: true,
         createdBy,
       });
@@ -90,7 +96,9 @@ export class IntegrationService {
         metadata: {
           campaignId,
           groupTitle: chatTitle,
-          rewardLevels: rewardLevels.length,
+          accessMode: options.accessMode,
+          rewardLevelsCount: options.rewardLevels?.length || 0,
+          minAmount: options.minAmount,
         },
       });
 
@@ -155,7 +163,9 @@ export class IntegrationService {
   async updateIntegration(
     integrationId: string,
     updates: Partial<{
+      accessMode: 'reward_levels' | 'min_amount';
       rewardLevels: string[];
+      minAmount: number;
       isActive: boolean;
     }>
   ): Promise<IIntegration | null> {
@@ -489,12 +499,16 @@ export class IntegrationService {
         throw new Error('Token de autorização expirado');
       }
 
-      // Criar integração
+      // Criar integração (usando modo reward_levels por padrão para tokens antigos)
       const integration = await this.createIntegration(
         authToken.campaignId.toString(),
         telegramGroupId,
-        authToken.rewardLevels,
-        authToken.userId.toString()
+        authToken.userId.toString(),
+        {
+          accessMode: 'reward_levels',
+          rewardLevels: authToken.rewardLevels,
+          minAmount: undefined,
+        }
       );
 
       // Marcar token como usado
