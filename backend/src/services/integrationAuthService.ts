@@ -227,6 +227,7 @@ export class IntegrationAuthService {
     groupTitle: string
   ): Promise<{
     success: boolean;
+    warning?: string;
     error?: string;
   }> {
     try {
@@ -242,6 +243,34 @@ export class IntegrationAuthService {
         };
       }
 
+      // Verificar se o grupo tem membros existentes
+      let warning: string | undefined;
+      try {
+        const telegramService = (await import('./telegramService')).default;
+        const bot = telegramService.getBot();
+        const chat = await bot.telegram.getChat(groupId);
+
+        const memberCount = 'members_count' in chat ? (chat.members_count as number | undefined) : undefined;
+
+        if (memberCount !== undefined && memberCount > 1) {
+          // Grupo tem membros além do bot
+          warning = `⚠️ ATENÇÃO: Este grupo possui ${memberCount} membros. Recomendamos criar um novo grupo vazio para melhor controle de acesso.`;
+
+          logger.warn('Grupo selecionado possui membros existentes', {
+            stateToken,
+            groupId,
+            groupTitle,
+            memberCount,
+          });
+        }
+      } catch (chatError: any) {
+        logger.error('Erro ao verificar membros do grupo', {
+          groupId,
+          error: chatError.message
+        });
+        // Continua mesmo com erro na verificação
+      }
+
       session.selectedGroupId = groupId;
       session.selectedGroupTitle = groupTitle;
       session.status = 'group_selected';
@@ -250,10 +279,12 @@ export class IntegrationAuthService {
       logger.info('Grupo selecionado', {
         stateToken,
         groupId,
+        hasWarning: !!warning,
       });
 
       return {
         success: true,
+        warning,
       };
     } catch (error: any) {
       logger.error('Erro ao processar seleção de grupo', { error: error.message });

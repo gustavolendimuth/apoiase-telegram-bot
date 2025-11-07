@@ -230,14 +230,18 @@ export class TelegramGroupDiscoveryService {
       // Validar cada grupo verificando se ainda existe no Telegram
       for (const dbGroup of dbGroups) {
         try {
-          // Tentar obter informações do grupo
-          await this.bot.telegram.getChat(dbGroup.groupId);
+          // Tentar obter informações atualizadas do grupo
+          const chat = await this.bot.telegram.getChat(dbGroup.groupId);
 
-          // Se conseguiu, o grupo existe - adicionar à lista válida
+          // Obter contagem de membros atualizada
+          const memberCount = 'members_count' in chat ? (chat.members_count as number | undefined) : undefined;
+
+          // Se conseguiu, o grupo existe - adicionar à lista válida com dados atualizados
           const group: DiscoveredGroup = {
             id: dbGroup.groupId,
             title: dbGroup.title,
             type: dbGroup.type,
+            memberCount,
             canPostMessages: dbGroup.canPostMessages,
             canManageChat: dbGroup.canManageChat,
             canInviteUsers: dbGroup.canInviteUsers,
