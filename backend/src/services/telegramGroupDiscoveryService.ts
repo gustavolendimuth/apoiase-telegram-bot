@@ -90,6 +90,16 @@ export class TelegramGroupDiscoveryService {
       // Obter permissões do bot
       const botMember = await this.bot.telegram.getChatMember(groupId, this.bot.botInfo!.id);
 
+      logger.info('Permissões do bot no grupo', {
+        groupId,
+        status: botMember.status,
+        permissions: botMember.status === 'administrator' ? {
+          can_manage_chat: botMember.can_manage_chat,
+          can_invite_users: botMember.can_invite_users,
+          can_post_messages: botMember.can_post_messages,
+        } : 'not admin',
+      });
+
       if (botMember.status !== 'administrator') {
         logger.warn('Bot não é administrador do grupo', { groupId, title: chat.title });
         return null;
@@ -99,6 +109,14 @@ export class TelegramGroupDiscoveryService {
       const canPostMessages = botMember.status === 'administrator' && (botMember.can_post_messages !== false);
       const canManageChat = botMember.status === 'administrator' && (botMember.can_manage_chat !== false);
       const canInviteUsers = botMember.status === 'administrator' && (botMember.can_invite_users !== false);
+
+      // Log detalhado das permissões calculadas
+      logger.info('Permissões calculadas', {
+        groupId,
+        canPostMessages,
+        canManageChat,
+        canInviteUsers,
+      });
 
       const discoveredGroup: DiscoveredGroup = {
         id: groupId,
