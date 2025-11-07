@@ -158,7 +158,19 @@ export class TelegramService {
 
         // Registrar grupo no discovery service
         if (this.groupDiscoveryService) {
-          await this.groupDiscoveryService.discoverGroup(chat.id.toString());
+          logger.info('Iniciando registro do grupo via /register', {
+            groupId: chat.id,
+            groupTitle: 'title' in chat ? chat.title : 'Sem título',
+            userId: ctx.from.id,
+          });
+
+          const result = await this.groupDiscoveryService.discoverGroup(chat.id.toString());
+
+          if (!result) {
+            logger.error('discoverGroup retornou null', { groupId: chat.id });
+            await ctx.reply('❌ Erro ao registrar grupo. Verifique se o bot é admin com todas as permissões necessárias.');
+            return;
+          }
 
           const groupTitle = 'title' in chat ? chat.title : 'Sem título';
 
@@ -171,12 +183,18 @@ export class TelegramService {
             { parse_mode: 'Markdown' }
           );
 
-          logger.info('Grupo registrado manualmente via comando /register:', {
+          logger.info('✅ Grupo registrado manualmente via comando /register:', {
             groupId: chat.id,
             groupTitle: groupTitle,
             registeredBy: ctx.from.id,
+            permissions: {
+              canInviteUsers: result.canInviteUsers,
+              canManageChat: result.canManageChat,
+              canPostMessages: result.canPostMessages,
+            },
           });
         } else {
+          logger.error('groupDiscoveryService é null');
           await ctx.reply('❌ Serviço de descoberta não disponível.');
         }
       } catch (error: any) {
