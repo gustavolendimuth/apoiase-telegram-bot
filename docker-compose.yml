@@ -1,8 +1,6 @@
-version: '3.8'
-
 services:
   mongodb:
-    image: mongo:latest
+    image: mongo:7.0-jammy
     container_name: apoiase-mongodb
     restart: unless-stopped
     ports:
@@ -11,11 +9,18 @@ services:
       MONGO_INITDB_DATABASE: apoiase-telegram-bot
     volumes:
       - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
     networks:
       - apoiase-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   redis:
-    image: redis:alpine
+    image: redis:7-alpine
     container_name: apoiase-redis
     restart: unless-stopped
     ports:
@@ -24,6 +29,13 @@ services:
       - redis_data:/data
     networks:
       - apoiase-network
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   backend:
     build:
@@ -41,12 +53,20 @@ services:
     env_file:
       - ./backend/.env
     depends_on:
-      - mongodb
-      - redis
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - apoiase-network
     volumes:
       - ./backend/logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   frontend:
     build:
@@ -61,13 +81,24 @@ services:
     env_file:
       - ./frontend/.env.local
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - apoiase-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 volumes:
   mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
   redis_data:
+    driver: local
 
 networks:
   apoiase-network:

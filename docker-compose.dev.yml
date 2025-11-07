@@ -1,27 +1,72 @@
+# Docker Compose override for development mode
+# This file extends docker-compose.yml with development-specific configurations
+#
+# IMPORTANT: This file must be used together with docker-compose.yml
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+#        OR use: npm run docker:dev
+
 services:
+  # MongoDB and Redis are inherited from base docker-compose.yml
+  # No need to redefine them here
+
   backend:
     build:
       context: .
       dockerfile: ./backend/Dockerfile.dev
+    container_name: apoiase-backend-dev
     environment:
       NODE_ENV: development
+      MONGODB_URI: mongodb://mongodb:27017/apoiase-telegram-bot
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     volumes:
+      # Mount source code for hot reload
       - ./backend:/app/backend
       - ./shared:/app/shared
+      # Exclude node_modules to use container's version
       - /app/backend/node_modules
       - /app/node_modules
+      # Persist logs
+      - ./backend/logs:/app/logs
     command: sh -c "cd /app/backend && npm run dev"
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - apoiase-network
+    # Add healthcheck for better monitoring
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   frontend:
     build:
       context: .
       dockerfile: ./frontend/Dockerfile.dev
+    container_name: apoiase-frontend-dev
     environment:
       NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3001
     volumes:
+      # Mount source code for hot reload
       - ./frontend:/app/frontend
       - ./shared:/app/shared
+      # Exclude node_modules and .next to use container's version
       - /app/frontend/node_modules
       - /app/frontend/.next
       - /app/node_modules
     command: sh -c "cd /app/frontend && npm run dev"
+    depends_on:
+      - backend
+    networks:
+      - apoiase-network
+    # Add healthcheck
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
