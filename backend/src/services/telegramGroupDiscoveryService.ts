@@ -110,8 +110,29 @@ export class TelegramGroupDiscoveryService {
         canInviteUsers,
       };
 
-      // Armazenar grupo descoberto
+      // Armazenar grupo descoberto em memória
       this.discoveredGroups.set(groupId, discoveredGroup);
+
+      // Persistir grupo no banco de dados
+      try {
+        const DiscoveredGroupModel = (await import('../models/DiscoveredGroup')).default;
+        await DiscoveredGroupModel.findOneAndUpdate(
+          { groupId },
+          {
+            groupId,
+            title: discoveredGroup.title,
+            type: discoveredGroup.type,
+            canPostMessages,
+            canManageChat,
+            canInviteUsers,
+            lastChecked: new Date(),
+          },
+          { upsert: true, new: true }
+        );
+        logger.info('Grupo persistido no banco de dados', { groupId });
+      } catch (dbError: any) {
+        logger.error('Erro ao persistir grupo no banco', { groupId, error: dbError.message });
+      }
 
       logger.info('Grupo descoberto', {
         groupId,
@@ -135,8 +156,39 @@ export class TelegramGroupDiscoveryService {
    *
    * NOTA: Em webhook mode (produção), grupos devem ser registrados manualmente
    * usando o comando /register no grupo do Telegram, pois getUpdates() não funciona.
+   *
+   * Grupos são carregados do banco de dados para persistir entre restarts.
    */
   async listAvailableGroups(): Promise<DiscoveredGroup[]> {
+    // Buscar grupos descobertos do banco de dados
+    try {
+      const DiscoveredGroupModel = (await import('../models/DiscoveredGroup')).default;
+      const dbGroups = await DiscoveredGroupModel.find({
+        canInviteUsers: true,
+        canManageChat: true,
+      });
+
+      // Popular cache em memória com grupos do banco
+      for (const dbGroup of dbGroups) {
+        if (!this.discoveredGroups.has(dbGroup.groupId)) {
+          this.discoveredGroups.set(dbGroup.groupId, {
+            id: dbGroup.groupId,
+            title: dbGroup.title,
+            type: dbGroup.type,
+            canPostMessages: dbGroup.canPostMessages,
+            canManageChat: dbGroup.canManageChat,
+            canInviteUsers: dbGroup.canInviteUsers,
+          });
+        }
+      }
+
+      logger.info('Grupos carregados do banco de dados', {
+        total: dbGroups.length,
+      });
+    } catch (error: any) {
+      logger.error('Erro ao carregar grupos do banco de dados', { error: error.message });
+    }
+
     return Array.from(this.discoveredGroups.values())
       .filter(group => group.canInviteUsers && group.canManageChat);
   }
