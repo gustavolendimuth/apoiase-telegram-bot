@@ -134,7 +134,15 @@ export class TelegramGroupDiscoveryService {
       // Persistir grupo no banco de dados
       try {
         const DiscoveredGroupModel = (await import('../models/DiscoveredGroup')).default;
-        await DiscoveredGroupModel.findOneAndUpdate(
+
+        console.log('[DEBUG] Tentando salvar grupo no banco:', {
+          groupId,
+          title: discoveredGroup.title,
+          canManageChat,
+          canInviteUsers,
+        });
+
+        const savedGroup = await DiscoveredGroupModel.findOneAndUpdate(
           { groupId },
           {
             groupId,
@@ -147,9 +155,31 @@ export class TelegramGroupDiscoveryService {
           },
           { upsert: true, new: true }
         );
-        logger.info('Grupo persistido no banco de dados', { groupId });
+
+        console.log('[SUCCESS] Grupo salvo no banco:', {
+          _id: savedGroup._id,
+          groupId: savedGroup.groupId,
+          title: savedGroup.title,
+        });
+
+        logger.info('✅ Grupo persistido no banco de dados', {
+          groupId,
+          dbId: savedGroup._id,
+        });
       } catch (dbError: any) {
-        logger.error('Erro ao persistir grupo no banco', { groupId, error: dbError.message });
+        console.error('[ERROR] Falha ao salvar grupo no banco:', {
+          groupId,
+          error: dbError.message,
+          stack: dbError.stack,
+        });
+        logger.error('❌ Erro ao persistir grupo no banco', {
+          groupId,
+          error: dbError.message,
+          stack: dbError.stack,
+        });
+
+        // Re-throw para que o erro não seja silencioso
+        throw new Error(`Falha ao persistir grupo: ${dbError.message}`);
       }
 
       logger.info('Grupo descoberto', {
