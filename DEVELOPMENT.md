@@ -486,6 +486,24 @@ ngrok config add-authtoken SEU_TOKEN
 cloudflared tunnel --url http://localhost:3001
 ```
 
+#### ❌ Cloudflare: "http: no Host in request URL"
+
+```bash
+# Problema: URL sem //, ex: http:localhost:3001
+# Solução: Usar sintaxe correta com //
+cloudflared tunnel --url http://localhost:3001  # ✅ Correto
+cloudflared tunnel --url http:localhost:3001    # ❌ Errado
+```
+
+#### ❌ Cloudflare: Túnel criado mas bot não responde
+
+```bash
+# Problema: Apontando para porta errada (frontend em vez de backend)
+# Solução: Usar porta 3001 (backend) em vez de 3000 (frontend)
+cloudflared tunnel --url http://localhost:3001  # ✅ Backend
+cloudflared tunnel --url http://localhost:3000  # ❌ Frontend
+```
+
 #### ❌ Webhook não recebe requisições
 
 ```bash
