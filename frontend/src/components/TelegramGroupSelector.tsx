@@ -128,7 +128,7 @@ export function TelegramGroupSelector({
           Passo 2: Crie e Selecione um Grupo do Telegram
         </h2>
         <p className="text-sm text-blue-700 mb-3">
-          <strong>⚠️ IMPORTANTE:</strong> Recomendamos criar um <strong>novo grupo vazio</strong> para esta integração.
+          <strong>⚠️ IMPORTANTE:</strong> É necessário criar um <strong>novo grupo vazio</strong> para esta integração.
         </p>
         <div className="bg-white border border-blue-300 rounded-lg p-3 text-sm text-blue-900 space-y-2">
           <p className="font-semibold">Como criar um novo grupo no Telegram:</p>
