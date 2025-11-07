@@ -164,11 +164,30 @@ export class TelegramService {
             userId: ctx.from.id,
           });
 
+          // Primeiro, vamos verificar as permissões e mostrar no Telegram
+          try {
+            const botInfo = await ctx.telegram.getMe();
+            const botMember = await ctx.telegram.getChatMember(chat.id, botInfo.id);
+
+            const debugInfo = `🔍 *Debug - Status do Bot*\n\n` +
+              `👤 Bot: @${botInfo.username}\n` +
+              `📊 Status: ${botMember.status}\n\n` +
+              `*Permissões (raw):*\n` +
+              `• can_manage_chat: ${botMember.status === 'administrator' ? botMember.can_manage_chat : 'N/A'}\n` +
+              `• can_invite_users: ${botMember.status === 'administrator' ? botMember.can_invite_users : 'N/A'}\n` +
+              `• can_post_messages: ${botMember.status === 'administrator' ? botMember.can_post_messages : 'N/A'}`;
+
+            await ctx.reply(debugInfo, { parse_mode: 'Markdown' });
+          } catch (debugError: any) {
+            await ctx.reply(`❌ Erro ao obter permissões: ${debugError.message}`);
+            return;
+          }
+
           const result = await this.groupDiscoveryService.discoverGroup(chat.id.toString());
 
           if (!result) {
             logger.error('discoverGroup retornou null', { groupId: chat.id });
-            await ctx.reply('❌ Erro ao registrar grupo. Verifique se o bot é admin com todas as permissões necessárias.');
+            await ctx.reply('❌ Erro ao registrar grupo. O bot precisa ser admin com:\n• Manage chat\n• Invite users via link');
             return;
           }
 
