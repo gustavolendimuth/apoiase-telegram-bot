@@ -57,7 +57,7 @@ function CampaignSettingsContent() {
     imageUrl: '',
   });
 
-  const { integrations, loading: integrationsLoading } = useIntegrations(campaignId || '');
+  const { integrations, loading: integrationsLoading, deleteIntegration } = useIntegrations(campaignId || '');
 
   useEffect(() => {
     if (!campaignId) {
@@ -129,13 +129,14 @@ function CampaignSettingsContent() {
       setDisconnectingIntegrationId(integrationId);
       setError('');
 
-      await api.delete(`/api/integrations/${integrationId}`);
+      const success = await deleteIntegration(integrationId);
 
-      // Reload integrations
-      window.location.reload();
+      if (!success) {
+        setError('Erro ao desconectar integração com Telegram');
+      }
     } catch (err: any) {
       console.error('Erro ao desconectar Telegram:', err);
-      setError(err.response?.data?.error || 'Erro ao desconectar integração com Telegram');
+      setError('Erro ao desconectar integração com Telegram');
     } finally {
       setDisconnectingIntegrationId(null);
     }
