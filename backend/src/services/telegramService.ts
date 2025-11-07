@@ -316,9 +316,21 @@ export class TelegramService {
             chatType: chat.type,
           });
 
+          // Descobrir grupo automaticamente via groupDiscoveryService
+          if (this.groupDiscoveryService && (chat.type === 'group' || chat.type === 'supergroup')) {
+            await this.groupDiscoveryService.discoverGroup(chat.id.toString());
+          }
+
           // Verificar se há um parâmetro de autorização pendente
           // Nota: O Telegram envia o parâmetro via comando /start depois de adicionar ao grupo
           // Então a autorização será processada no handler do /start
+        }
+
+        // Verificar se o bot foi removido
+        const wasRemoved = ['left', 'kicked'].includes(new_chat_member.status);
+        if (wasRemoved && this.groupDiscoveryService) {
+          this.groupDiscoveryService.removeGroup(chat.id.toString());
+          logger.info('Bot removido do grupo', { groupId: chat.id });
         }
       } catch (error) {
         logger.error('Erro ao processar my_chat_member:', error);

@@ -28,7 +28,8 @@ export class TelegramGroupDiscoveryService {
 
   constructor(bot: Telegraf) {
     this.bot = bot;
-    this.setupListeners();
+    // Nota: setupListeners() não é chamado aqui para evitar handlers duplicados
+    // Os listeners são gerenciados pelo telegramService
   }
 
   /**
