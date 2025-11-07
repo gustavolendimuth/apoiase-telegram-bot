@@ -299,8 +299,11 @@ frontend/src/
 
 1. **OAuth-like Integration (APOIA.se → Telegram)**:
    - Maker clicks "Connect Telegram" on APOIA.se → redirects to our service with temp credentials
+   - User sees preliminary instructions to create new empty Telegram group
    - User authenticates with Telegram Login Widget → validates hash
-   - System auto-discovers Telegram groups where bot is admin → user selects group
+   - System auto-discovers Telegram groups where bot is admin → displays with member count
+   - Groups with >1 member show yellow warning; empty groups show green "Recomendado" badge
+   - User selects group → backend validates and warns if group has existing members
    - Integration created → redirects back to APOIA.se with success status
 
 2. **Create Integration (Legacy)**: Maker links campaign → validates bot permissions → generates API key
@@ -506,7 +509,18 @@ Critical indexes for performance:
 ## Recent Updates
 
 ### November 2025 (Latest)
-1. **OAuth-like Integration Flow with APOIA.se**
+1. **Group Creation Guidance and Member Validation** (2025-11-07)
+   - Added backend validation to detect and warn about groups with existing members
+   - Groups with >1 member flagged with `hasExistingMembers` in API responses
+   - Warning message returned when selecting group with existing members
+   - Updated `listAvailableGroups()` to include real-time member count from Telegram
+   - Added preliminary instructions before Telegram auth step
+   - Step-by-step guide for creating new empty group in TelegramGroupSelector
+   - Visual indicators: Green "Recomendado" badge for empty groups, Yellow "Tem membros" warning for populated groups
+   - Inline warning messages explaining risks of using groups with existing members
+   - Improved UX to prevent access control issues from non-verified members
+
+2. **OAuth-like Integration Flow with APOIA.se**
    - Created full OAuth-like authorization flow for seamless integration
    - Added IntegrationAuthSession model for temporary session management
    - Implemented Telegram Login Widget authentication with hash validation
@@ -514,24 +528,24 @@ Critical indexes for performance:
    - Created integration authorization page with step-by-step UI
    - APOIA.se can now redirect makers to our service for one-click Telegram integration
 
-2. **Real APOIA.se API Integration**
+3. **Real APOIA.se API Integration**
    - Implemented apoiaseApiService for real API communication
    - Verification now uses actual APOIA.se API endpoint (`/backers/charges/{email}`)
    - Campaign-specific API credentials stored securely (select: false in model)
    - Support for real-time payment status verification
 
-3. **New Services & Controllers**
+4. **New Services & Controllers**
    - integrationAuthService - OAuth-like flow logic
    - integrationAuthController - Authorization endpoints
    - telegramGroupDiscoveryService - Auto-discover bot's Telegram groups
    - apoiaseApiService - APOIA.se API client
 
-4. **New Frontend Pages**
+5. **New Frontend Pages**
    - `/integration/authorize` - OAuth authorization page with Telegram widget
    - `/campaigns/[slug]/integrations` - Campaign integrations management
    - TelegramGroupSelector component for group selection UI
 
-5. **Documentation**
+6. **Documentation**
    - Added INTEGRATION_FLOW.md - Complete OAuth flow documentation
    - Added APOIA_SE_INTEGRATION_GUIDE.md - Integration guide for APOIA.se team
 
