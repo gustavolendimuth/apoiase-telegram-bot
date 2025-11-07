@@ -26,8 +26,8 @@ export class TelegramGroupDiscoveryService {
   private bot: Telegraf;
   private discoveredGroups: Map<string, DiscoveredGroup> = new Map();
 
-  constructor(botToken: string) {
-    this.bot = new Telegraf(botToken);
+  constructor(bot: Telegraf) {
+    this.bot = bot;
     this.setupListeners();
   }
 
@@ -87,8 +87,11 @@ export class TelegramGroupDiscoveryService {
         return null;
       }
 
+      // Obter informações do bot (garantir que botInfo esteja disponível)
+      const botInfo = await this.bot.telegram.getMe();
+
       // Obter permissões do bot
-      const botMember = await this.bot.telegram.getChatMember(groupId, this.bot.botInfo!.id);
+      const botMember = await this.bot.telegram.getChatMember(groupId, botInfo.id);
 
       logger.info('Permissões do bot no grupo', {
         groupId,

@@ -26,7 +26,7 @@ export class TelegramService {
 
     try {
       this.bot = new Telegraf(this.botToken);
-      this.groupDiscoveryService = new TelegramGroupDiscoveryService(this.botToken);
+      this.groupDiscoveryService = new TelegramGroupDiscoveryService(this.bot);
       this.setupCommands();
       this.setupHandlers();
       this.initialized = true;
