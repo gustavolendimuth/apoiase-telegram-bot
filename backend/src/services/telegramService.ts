@@ -314,11 +314,33 @@ export class TelegramService {
             chatId: chat.id,
             chatTitle: 'title' in chat ? chat.title : 'N/A',
             chatType: chat.type,
+            oldStatus: old_chat_member.status,
+            newStatus: new_chat_member.status,
           });
 
           // Descobrir grupo automaticamente via groupDiscoveryService
+          // IMPORTANTE: Fazer isso de forma assíncrona (fire-and-forget) para não bloquear
+          // a resposta ao Telegram e evitar timeout/erro
           if (this.groupDiscoveryService && (chat.type === 'group' || chat.type === 'supergroup')) {
-            await this.groupDiscoveryService.discoverGroup(chat.id.toString());
+            const groupId = chat.id.toString();
+            const groupTitle = 'title' in chat ? chat.title : 'N/A';
+
+            // Processar de forma assíncrona sem bloquear a resposta
+            this.groupDiscoveryService.discoverGroup(groupId)
+              .then(() => {
+                logger.info('Grupo descoberto com sucesso (assíncrono)', {
+                  chatId: chat.id,
+                  chatTitle: groupTitle,
+                });
+              })
+              .catch((discoverError: any) => {
+                logger.error('Erro ao descobrir grupo após adicionar bot (assíncrono):', {
+                  chatId: chat.id,
+                  chatTitle: groupTitle,
+                  error: discoverError.message,
+                  stack: discoverError.stack,
+                });
+              });
           }
 
           // Verificar se há um parâmetro de autorização pendente
@@ -332,8 +354,13 @@ export class TelegramService {
           this.groupDiscoveryService.removeGroup(chat.id.toString());
           logger.info('Bot removido do grupo', { groupId: chat.id });
         }
-      } catch (error) {
-        logger.error('Erro ao processar my_chat_member:', error);
+      } catch (error: any) {
+        logger.error('Erro ao processar my_chat_member:', {
+          error: error.message,
+          stack: error.stack,
+          chatId: ctx.chat?.id,
+          updateType: ctx.updateType,
+        });
       }
     });
 
