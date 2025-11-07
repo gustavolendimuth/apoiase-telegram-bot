@@ -245,6 +245,8 @@ INFO                    # Informações do Redis
 
 ## 🤖 Telegram Bot
 
+### Comandos Básicos
+
 ```bash
 # Testar se o token do bot é válido
 curl https://api.telegram.org/bot<SEU_TOKEN>/getMe
@@ -261,6 +263,245 @@ curl -X POST https://api.telegram.org/bot<SEU_TOKEN>/deleteWebhook
 
 # Ver informações do webhook
 curl https://api.telegram.org/bot<SEU_TOKEN>/getWebhookInfo
+```
+
+### Scripts NPM para Webhook
+
+O projeto inclui scripts úteis para gerenciar o webhook do Telegram:
+
+```bash
+# Testar conexão com o bot
+npm run webhook:test --workspace=backend
+
+# Configurar webhook (passar URL pública)
+npm run webhook:set https://abc123.ngrok.io --workspace=backend
+
+# Ver informações do webhook atual
+npm run webhook:info --workspace=backend
+
+# Remover webhook (volta para modo polling)
+npm run webhook:delete --workspace=backend
+```
+
+---
+
+## 🌐 Tunelamento HTTP para Desenvolvimento Local
+
+**Problema**: O Telegram Bot exige um webhook com domínio público HTTPS, mas `localhost` não é acessível publicamente.
+
+**Solução**: Use um serviço de tunelamento HTTP para expor seu localhost temporariamente durante o desenvolvimento.
+
+### Opção 1: ngrok (Recomendado)
+
+**ngrok** é a solução mais popular e fácil de usar.
+
+#### Instalação
+
+**Linux/macOS:**
+```bash
+# Via Snap (Linux)
+sudo snap install ngrok
+
+# Via Homebrew (macOS)
+brew install ngrok
+
+# Ou download direto
+wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz
+tar xvzf ngrok-v3-stable-linux-amd64.tgz
+sudo mv ngrok /usr/local/bin/
+```
+
+**Windows:**
+```powershell
+# Via Chocolatey
+choco install ngrok
+
+# Ou baixe em: https://ngrok.com/download
+```
+
+#### Configuração (Opcional - para conta grátis)
+
+```bash
+# 1. Criar conta em https://dashboard.ngrok.com/signup
+# 2. Pegar seu authtoken em https://dashboard.ngrok.com/get-started/your-authtoken
+# 3. Configurar authtoken
+ngrok config add-authtoken SEU_AUTHTOKEN_AQUI
+```
+
+> **Nota**: O authtoken é opcional para uso básico, mas recomendado para evitar limites e ter URLs persistentes.
+
+#### Uso
+
+```bash
+# 1. Iniciar backend localmente
+npm run dev:backend
+
+# 2. Em outro terminal, iniciar ngrok apontando para porta 3001
+ngrok http 3001
+
+# 3. Copiar URL HTTPS gerada (ex: https://abc123.ngrok.io)
+
+# 4. Configurar webhook do Telegram com o script
+npm run webhook:set https://abc123.ngrok.io --workspace=backend
+
+# 5. Testar bot no Telegram!
+```
+
+**Saída do ngrok:**
+```
+Session Status    online
+Account           seu@email.com (Plan: Free)
+Version           3.3.0
+Region            United States (us)
+Forwarding        https://abc123.ngrok.io -> http://localhost:3001
+
+Web Interface     http://127.0.0.1:4040
+```
+
+**Dicas ngrok:**
+- Interface web em `http://localhost:4040` mostra todas as requisições em tempo real
+- URL muda a cada reinicialização (versão gratuita)
+- Limite de 40 requisições/minuto (versão gratuita)
+- Para URL fixa, use plano pago ou configure domínio customizado
+
+---
+
+### Opção 2: Cloudflare Tunnel (Gratuito)
+
+**Vantagens**: Gratuito, sem limites, mais rápido que ngrok.
+
+#### Instalação
+
+```bash
+# Linux
+wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+sudo dpkg -i cloudflared-linux-amd64.deb
+
+# macOS
+brew install cloudflare/cloudflare/cloudflared
+
+# Windows
+winget install --id Cloudflare.cloudflared
+```
+
+#### Uso
+
+```bash
+# Iniciar tunnel (não precisa de login para túneis temporários)
+cloudflared tunnel --url http://localhost:3001
+
+# Copiar URL gerada (ex: https://xyz.trycloudflare.com)
+
+# Configurar webhook
+npm run webhook:set https://xyz.trycloudflare.com --workspace=backend
+```
+
+---
+
+### Opção 3: localtunnel (Mais Simples)
+
+**Vantagens**: Não precisa instalar nada, usa npx.
+
+```bash
+# Uso direto com npx (sem instalação)
+npx localtunnel --port 3001
+
+# Ou instalar globalmente
+npm install -g localtunnel
+lt --port 3001
+
+# Copiar URL gerada
+npm run webhook:set https://xyz.loca.lt --workspace=backend
+```
+
+---
+
+### Opção 4: serveo.net (Via SSH)
+
+**Vantagens**: Não precisa instalar nada, funciona via SSH.
+
+```bash
+# Usar serveo via SSH
+ssh -R 80:localhost:3001 serveo.net
+
+# Copiar URL gerada
+npm run webhook:set https://xyz.serveo.net --workspace=backend
+```
+
+---
+
+### Comparação de Soluções
+
+| Ferramenta | Instalação | Gratuito | Limites | URL Fixa | Velocidade |
+|------------|------------|----------|---------|----------|------------|
+| **ngrok** | Média | ✅ Sim | 40 req/min | ❌ Não* | ⭐⭐⭐⭐ |
+| **Cloudflare Tunnel** | Média | ✅ Sim | ❌ Sem limite | ❌ Não | ⭐⭐⭐⭐⭐ |
+| **localtunnel** | Fácil | ✅ Sim | Poucos | ❌ Não | ⭐⭐⭐ |
+| **serveo** | Nenhuma | ✅ Sim | Poucos | ❌ Não | ⭐⭐⭐ |
+
+> *ngrok oferece URL fixa apenas no plano pago
+
+---
+
+### Workflow Recomendado para Desenvolvimento
+
+```bash
+# Terminal 1: Backend
+npm run dev:backend
+
+# Terminal 2: ngrok/Cloudflare
+ngrok http 3001
+# OU
+cloudflared tunnel --url http://localhost:3001
+
+# Terminal 3: Configurar webhook (copiar URL do terminal 2)
+npm run webhook:set https://abc123.ngrok.io --workspace=backend
+
+# Verificar configuração
+npm run webhook:info --workspace=backend
+
+# Desenvolver e testar bot no Telegram! ✅
+
+# Ao terminar, limpar webhook (opcional)
+npm run webhook:delete --workspace=backend
+```
+
+---
+
+### Troubleshooting Tunnel
+
+#### ❌ ngrok: "ERR_NGROK_108"
+
+```bash
+# Problema: Muitas conexões simultâneas (limite free)
+# Solução: Criar conta e adicionar authtoken
+ngrok config add-authtoken SEU_TOKEN
+```
+
+#### ❌ Cloudflare: "tunnel credentials file not found"
+
+```bash
+# Problema: Tentando usar tunnel persistente sem login
+# Solução: Use modo quick tunnel (sem --name)
+cloudflared tunnel --url http://localhost:3001
+```
+
+#### ❌ Webhook não recebe requisições
+
+```bash
+# 1. Verificar se tunnel está rodando
+# Acessar URL do tunnel no navegador - deve aparecer erro da API
+
+# 2. Verificar logs do backend
+docker-compose logs -f backend
+
+# 3. Verificar webhook configurado
+npm run webhook:info --workspace=backend
+
+# 4. Testar manualmente
+curl -X POST https://seu-tunnel.ngrok.io/webhook/telegram \
+  -H "Content-Type: application/json" \
+  -d '{"message":{"text":"test"}}'
 ```
 
 ---

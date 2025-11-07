@@ -138,6 +138,23 @@ db.eventlogs.find().sort({createdAt: -1}).limit(10)
 docker exec -it apoiase-redis redis-cli
 ```
 
+### Telegram Webhook Management
+```bash
+# Test bot connection
+npm run webhook:test --workspace=backend
+
+# Set webhook (use with ngrok/cloudflare tunnel)
+npm run webhook:set https://abc123.ngrok.io --workspace=backend
+
+# Check webhook info
+npm run webhook:info --workspace=backend
+
+# Delete webhook (switch to polling mode)
+npm run webhook:delete --workspace=backend
+```
+
+**For local development**: See [DEVELOPMENT.md](DEVELOPMENT.md#-tunelamento-http-para-desenvolvimento-local) for HTTP tunneling setup (ngrok, Cloudflare Tunnel, etc.)
+
 ### Testing API
 ```bash
 # Health check
@@ -509,7 +526,16 @@ Critical indexes for performance:
 ## Recent Updates
 
 ### November 2025 (Latest)
-1. **Group Creation Guidance and Member Validation** (2025-11-07)
+1. **HTTP Tunneling for Local Development** (2025-11-07)
+   - Added comprehensive guide for using ngrok, Cloudflare Tunnel, localtunnel, and serveo
+   - Created `setWebhook.ts` script to automate webhook configuration
+   - Added npm commands: `webhook:set`, `webhook:delete`, `webhook:info`, `webhook:test`
+   - Updated DEVELOPMENT.md with detailed tunneling setup instructions
+   - Comparison table of different tunneling solutions
+   - Troubleshooting guide for common tunnel issues
+   - This allows developers to test Telegram bot locally without deploying
+
+2. **Group Creation Guidance and Member Validation** (2025-11-07)
    - Added backend validation to detect and warn about groups with existing members
    - Groups with >1 member flagged with `hasExistingMembers` in API responses
    - Warning message returned when selecting group with existing members
@@ -520,7 +546,7 @@ Critical indexes for performance:
    - Inline warning messages explaining risks of using groups with existing members
    - Improved UX to prevent access control issues from non-verified members
 
-2. **OAuth-like Integration Flow with APOIA.se**
+3. **OAuth-like Integration Flow with APOIA.se**
    - Created full OAuth-like authorization flow for seamless integration
    - Added IntegrationAuthSession model for temporary session management
    - Implemented Telegram Login Widget authentication with hash validation
@@ -528,24 +554,24 @@ Critical indexes for performance:
    - Created integration authorization page with step-by-step UI
    - APOIA.se can now redirect makers to our service for one-click Telegram integration
 
-3. **Real APOIA.se API Integration**
+4. **Real APOIA.se API Integration**
    - Implemented apoiaseApiService for real API communication
    - Verification now uses actual APOIA.se API endpoint (`/backers/charges/{email}`)
    - Campaign-specific API credentials stored securely (select: false in model)
    - Support for real-time payment status verification
 
-4. **New Services & Controllers**
+5. **New Services & Controllers**
    - integrationAuthService - OAuth-like flow logic
    - integrationAuthController - Authorization endpoints
    - telegramGroupDiscoveryService - Auto-discover bot's Telegram groups
    - apoiaseApiService - APOIA.se API client
 
-5. **New Frontend Pages**
+6. **New Frontend Pages**
    - `/integration/authorize` - OAuth authorization page with Telegram widget
    - `/campaigns/[slug]/integrations` - Campaign integrations management
    - TelegramGroupSelector component for group selection UI
 
-6. **Documentation**
+7. **Documentation**
    - Added INTEGRATION_FLOW.md - Complete OAuth flow documentation
    - Added APOIA_SE_INTEGRATION_GUIDE.md - Integration guide for APOIA.se team
 

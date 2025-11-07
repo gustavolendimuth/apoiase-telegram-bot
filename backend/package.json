@@ -13,6 +13,10 @@
     "db:import": "tsx scripts/importDatabase.ts",
     "db:backup": "npm run db:export",
     "db:restore": "npm run db:import",
+    "webhook:set": "tsx src/scripts/setWebhook.ts set",
+    "webhook:delete": "tsx src/scripts/setWebhook.ts delete",
+    "webhook:info": "tsx src/scripts/setWebhook.ts info",
+    "webhook:test": "tsx src/scripts/setWebhook.ts test",
     "lint": "eslint src --ext .ts",
     "test": "jest"
   },
