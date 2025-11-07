@@ -87,18 +87,24 @@ export class TelegramService {
     // Comando /help
     this.bot.command('help', async (ctx: Context) => {
       try {
-        await ctx.reply(
-          `📚 *Comandos Disponíveis*\n\n` +
+        const isGroup = ctx.chat?.type === 'group' || ctx.chat?.type === 'supergroup';
+
+        let helpText = `📚 *Comandos Disponíveis*\n\n` +
           `/start - Iniciar conversa com o bot\n` +
           `/verify - Verificar seu status de apoio\n` +
-          `/help - Mostrar esta mensagem de ajuda\n\n` +
-          `*Como funciona?*\n` +
+          `/help - Mostrar esta mensagem de ajuda\n`;
+
+        if (isGroup) {
+          helpText += `/register - Registrar grupo no sistema (admin)\n`;
+        }
+
+        helpText += `\n*Como funciona?*\n` +
           `1. Entre no grupo usando o link fornecido\n` +
           `2. O bot enviará uma mensagem solicitando verificação\n` +
           `3. Use /verify e informe seu email de apoio\n` +
-          `4. Pronto! Seu acesso será liberado automaticamente`,
-          { parse_mode: 'Markdown' }
-        );
+          `4. Pronto! Seu acesso será liberado automaticamente`;
+
+        await ctx.reply(helpText, { parse_mode: 'Markdown' });
       } catch (error) {
         logger.error('Erro ao processar comando /help:', error);
       }
@@ -119,6 +125,63 @@ export class TelegramService {
         });
       } catch (error) {
         logger.error('Erro ao processar comando /verify:', error);
+      }
+    });
+
+    // Comando /register - registra o grupo no sistema (admin only)
+    this.bot.command('register', async (ctx: Context) => {
+      try {
+        const chat = ctx.chat;
+
+        if (!chat) {
+          await ctx.reply('❌ Erro ao identificar o chat.');
+          return;
+        }
+
+        // Verificar se é um grupo
+        if (chat.type !== 'group' && chat.type !== 'supergroup') {
+          await ctx.reply('❌ Este comando só funciona em grupos.');
+          return;
+        }
+
+        // Verificar se o usuário é admin do grupo
+        if (!ctx.from) {
+          await ctx.reply('❌ Erro ao identificar o usuário.');
+          return;
+        }
+
+        const member = await ctx.telegram.getChatMember(chat.id, ctx.from.id);
+        if (member.status !== 'creator' && member.status !== 'administrator') {
+          await ctx.reply('❌ Apenas administradores podem registrar o grupo.');
+          return;
+        }
+
+        // Registrar grupo no discovery service
+        if (this.groupDiscoveryService) {
+          await this.groupDiscoveryService.discoverGroup(chat.id.toString());
+
+          const groupTitle = 'title' in chat ? chat.title : 'Sem título';
+
+          await ctx.reply(
+            `✅ *Grupo registrado com sucesso!*\n\n` +
+            `📋 Informações:\n` +
+            `• ID: \`${chat.id}\`\n` +
+            `• Nome: ${groupTitle}\n\n` +
+            `Agora você pode selecioná-lo ao criar uma integração!`,
+            { parse_mode: 'Markdown' }
+          );
+
+          logger.info('Grupo registrado manualmente via comando /register:', {
+            groupId: chat.id,
+            groupTitle: groupTitle,
+            registeredBy: ctx.from.id,
+          });
+        } else {
+          await ctx.reply('❌ Serviço de descoberta não disponível.');
+        }
+      } catch (error: any) {
+        logger.error('Erro ao processar comando /register:', error);
+        await ctx.reply('❌ Erro ao registrar grupo: ' + error.message);
       }
     });
   }
