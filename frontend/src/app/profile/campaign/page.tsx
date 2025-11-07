@@ -45,6 +45,7 @@ function CampaignSettingsContent() {
   const [error, setError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [disconnectingIntegrationId, setDisconnectingIntegrationId] = useState<string | null>(null);
 
   // Edit form state
   const [editFormData, setEditFormData] = useState({
@@ -116,6 +117,27 @@ function CampaignSettingsContent() {
       setError(err.response?.data?.error || 'Erro ao iniciar integração com Telegram');
     } finally {
       setIsConnecting(false);
+    }
+  };
+
+  const handleDisconnectTelegram = async (integrationId: string) => {
+    if (!confirm('Tem certeza que deseja desconectar esta integração? O bot sairá do grupo automaticamente.')) {
+      return;
+    }
+
+    try {
+      setDisconnectingIntegrationId(integrationId);
+      setError('');
+
+      await api.delete(`/api/integrations/${integrationId}`);
+
+      // Reload integrations
+      window.location.reload();
+    } catch (err: any) {
+      console.error('Erro ao desconectar Telegram:', err);
+      setError(err.response?.data?.error || 'Erro ao desconectar integração com Telegram');
+    } finally {
+      setDisconnectingIntegrationId(null);
     }
   };
 
@@ -580,9 +602,18 @@ function CampaignSettingsContent() {
                               </div>
                             </div>
                           </div>
-                          <Badge variant={integration.isActive ? "success" : "default"}>
-                            {integration.isActive ? "Ativo" : "Inativo"}
-                          </Badge>
+                          <div className="flex items-center gap-3">
+                            <Badge variant={integration.isActive ? "success" : "default"}>
+                              {integration.isActive ? "Ativo" : "Inativo"}
+                            </Badge>
+                            <button
+                              onClick={() => handleDisconnectTelegram(integration.id)}
+                              disabled={disconnectingIntegrationId === integration.id}
+                              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {disconnectingIntegrationId === integration.id ? 'Desconectando...' : 'Desconectar'}
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>

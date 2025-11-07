@@ -608,6 +608,24 @@ export class TelegramService {
   }
 
   /**
+   * Faz o bot sair de um grupo/canal
+   */
+  async leaveChat(chatId: string): Promise<boolean> {
+    if (!this.bot) {
+      throw new Error('Bot não inicializado');
+    }
+    try {
+      await this.bot.telegram.leaveChat(chatId);
+      logger.info('Bot saiu do grupo/canal', { chatId });
+      return true;
+    } catch (error: any) {
+      logger.error('Erro ao sair do grupo/canal:', { chatId, error: error.message });
+      // Retornar true mesmo em caso de erro (grupo pode já ter sido deletado)
+      return false;
+    }
+  }
+
+  /**
    * Gera link de convite para um grupo
    */
   async createInviteLink(chatId: number, expiresIn: number = 86400): Promise<string> {

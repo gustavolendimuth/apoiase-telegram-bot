@@ -216,6 +216,22 @@ export class IntegrationService {
         throw new Error('Integração não encontrada');
       }
 
+      // Fazer o bot sair do grupo antes de deletar a integração
+      try {
+        await telegramService.leaveChat(integration.telegramGroupId);
+        logger.info('Bot removido do grupo ao deletar integração', {
+          integrationId,
+          telegramGroupId: integration.telegramGroupId,
+        });
+      } catch (leaveChatError: any) {
+        logger.warn('Não foi possível remover o bot do grupo (grupo pode não existir mais)', {
+          integrationId,
+          telegramGroupId: integration.telegramGroupId,
+          error: leaveChatError.message,
+        });
+        // Continuar com a deleção mesmo se não conseguir sair do grupo
+      }
+
       await Integration.findByIdAndDelete(integrationId);
 
       // Registrar evento
