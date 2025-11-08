@@ -21,7 +21,11 @@
     "docker:dev:logs": "docker-compose logs -f",
     "docker:prod": "docker-compose up -d --build",
     "docker:down": "docker-compose down",
-    "docker:clean": "docker-compose down -v"
+    "docker:clean": "docker-compose down -v",
+    "webhook:set": "npm run webhook:set --workspace=backend --",
+    "webhook:delete": "npm run webhook:delete --workspace=backend",
+    "webhook:info": "npm run webhook:info --workspace=backend",
+    "webhook:test": "npm run webhook:test --workspace=backend"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

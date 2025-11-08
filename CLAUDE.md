@@ -141,17 +141,19 @@ docker exec -it apoiase-redis redis-cli
 ### Telegram Webhook Management
 ```bash
 # Test bot connection
-npm run webhook:test --workspace=backend
+npm run webhook:test
 
 # Set webhook (use with ngrok/cloudflare tunnel)
-npm run webhook:set https://abc123.ngrok.io --workspace=backend
+npm run webhook:set https://abc123.ngrok.io
 
 # Check webhook info
-npm run webhook:info --workspace=backend
+npm run webhook:info
 
 # Delete webhook (switch to polling mode)
-npm run webhook:delete --workspace=backend
+npm run webhook:delete
 ```
+
+> **Note**: Commands work from root, frontend, or backend workspace
 
 **For local development**: See [DEVELOPMENT.md](DEVELOPMENT.md#-tunelamento-http-para-desenvolvimento-local) for HTTP tunneling setup (ngrok, Cloudflare Tunnel, etc.)
 

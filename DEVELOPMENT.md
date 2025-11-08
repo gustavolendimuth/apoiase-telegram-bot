@@ -267,20 +267,27 @@ curl https://api.telegram.org/bot<SEU_TOKEN>/getWebhookInfo
 
 ### Scripts NPM para Webhook
 
-O projeto inclui scripts úteis para gerenciar o webhook do Telegram:
+O projeto inclui scripts úteis para gerenciar o webhook do Telegram.
 
+**Forma simplificada (recomendada):**
 ```bash
 # Testar conexão com o bot
-npm run webhook:test --workspace=backend
+npm run webhook:test
 
 # Configurar webhook (passar URL pública)
-npm run webhook:set https://abc123.ngrok.io --workspace=backend
+npm run webhook:set https://abc123.ngrok.io
 
 # Ver informações do webhook atual
-npm run webhook:info --workspace=backend
+npm run webhook:info
 
 # Remover webhook (volta para modo polling)
-npm run webhook:delete --workspace=backend
+npm run webhook:delete
+```
+
+**Também funciona com workspace (frontend ou backend):**
+```bash
+npm run webhook:set https://abc123.ngrok.io --workspace=backend
+npm run webhook:set https://abc123.ngrok.io --workspace=frontend
 ```
 
 ---
@@ -342,7 +349,7 @@ ngrok http 3001
 # 3. Copiar URL HTTPS gerada (ex: https://abc123.ngrok.io)
 
 # 4. Configurar webhook do Telegram com o script
-npm run webhook:set https://abc123.ngrok.io --workspace=backend
+npm run webhook:set https://abc123.ngrok.io
 
 # 5. Testar bot no Telegram!
 ```
@@ -393,7 +400,7 @@ cloudflared tunnel --url http://localhost:3001
 # Copiar URL gerada (ex: https://xyz.trycloudflare.com)
 
 # Configurar webhook
-npm run webhook:set https://xyz.trycloudflare.com --workspace=backend
+npm run webhook:set https://xyz.trycloudflare.com
 ```
 
 ---
@@ -411,7 +418,7 @@ npm install -g localtunnel
 lt --port 3001
 
 # Copiar URL gerada
-npm run webhook:set https://xyz.loca.lt --workspace=backend
+npm run webhook:set https://xyz.loca.lt
 ```
 
 ---
@@ -425,7 +432,7 @@ npm run webhook:set https://xyz.loca.lt --workspace=backend
 ssh -R 80:localhost:3001 serveo.net
 
 # Copiar URL gerada
-npm run webhook:set https://xyz.serveo.net --workspace=backend
+npm run webhook:set https://xyz.serveo.net
 ```
 
 ---
@@ -455,15 +462,15 @@ ngrok http 3001
 cloudflared tunnel --url http://localhost:3001
 
 # Terminal 3: Configurar webhook (copiar URL do terminal 2)
-npm run webhook:set https://abc123.ngrok.io --workspace=backend
+npm run webhook:set https://abc123.ngrok.io
 
 # Verificar configuração
-npm run webhook:info --workspace=backend
+npm run webhook:info
 
 # Desenvolver e testar bot no Telegram! ✅
 
 # Ao terminar, limpar webhook (opcional)
-npm run webhook:delete --workspace=backend
+npm run webhook:delete
 ```
 
 ---
@@ -514,7 +521,7 @@ cloudflared tunnel --url http://localhost:3000  # ❌ Frontend
 docker-compose logs -f backend
 
 # 3. Verificar webhook configurado
-npm run webhook:info --workspace=backend
+npm run webhook:info
 
 # 4. Testar manualmente
 curl -X POST https://seu-tunnel.ngrok.io/webhook/telegram \
