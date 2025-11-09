@@ -135,3 +135,4 @@ Após adicionar o bot ao grupo:
 - Grupos privados precisam ter o bot como administrador desde o início
 - Canais não são suportados (apenas grupos e supergrupos)
 
+
