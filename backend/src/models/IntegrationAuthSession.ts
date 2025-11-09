@@ -16,7 +16,8 @@ export interface IIntegrationAuthSession extends Document {
   telegramPhotoUrl?: string;
   selectedGroupId?: string; // ID do grupo Telegram selecionado
   selectedGroupTitle?: string;
-  status: 'pending' | 'telegram_auth_complete' | 'group_selected' | 'completed' | 'expired' | 'error';
+  selectedMinSupportLevel?: string; // Nível mínimo de apoio selecionado (acesso para este nível e superiores)
+  status: 'pending' | 'telegram_auth_complete' | 'group_selected' | 'min_support_level_selected' | 'completed' | 'expired' | 'error';
   errorMessage?: string;
   expiresAt: Date;
   createdAt: Date;
@@ -75,9 +76,13 @@ const IntegrationAuthSessionSchema = new Schema<IIntegrationAuthSession>(
       type: String,
       required: false,
     },
+    selectedMinSupportLevel: {
+      type: String,
+      required: false,
+    },
     status: {
       type: String,
-      enum: ['pending', 'telegram_auth_complete', 'group_selected', 'completed', 'expired', 'error'],
+      enum: ['pending', 'telegram_auth_complete', 'group_selected', 'min_support_level_selected', 'completed', 'expired', 'error'],
       default: 'pending',
     },
     errorMessage: {
@@ -100,7 +105,7 @@ IntegrationAuthSessionSchema.index({ stateToken: 1, status: 1, expiresAt: 1 });
 
 // Método para verificar se sessão está válida
 IntegrationAuthSessionSchema.methods.isValid = function (): boolean {
-  return ['pending', 'telegram_auth_complete', 'group_selected'].includes(this.status) && this.expiresAt > new Date();
+  return ['pending', 'telegram_auth_complete', 'group_selected', 'min_support_level_selected'].includes(this.status) && this.expiresAt > new Date();
 };
 
 // Método para marcar sessão como expirada

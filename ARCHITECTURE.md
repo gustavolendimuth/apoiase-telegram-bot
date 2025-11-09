@@ -468,7 +468,7 @@ GET    /health                         # Status do servidor
 | apiKey             | String   | Chave API única              | ✓      |
 | apoiaseApiKey      | String   | API key do APOIA.se (select: false) |  |
 | apoiaseBearerToken | String   | Bearer token do APOIA.se (select: false) | |
-| rewardLevels       | Array    | Níveis de recompensa         |        |
+| supportLevels      | Array    | IDs dos níveis de apoio      |        |
 | isActive           | Boolean  | Status ativo/inativo         | ✓      |
 | createdBy          | ObjectId | Ref: users                   |        |
 | createdAt          | Date     | Data de criação              |        |

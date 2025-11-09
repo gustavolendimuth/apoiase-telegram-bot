@@ -291,7 +291,7 @@ frontend/src/
 
 **Integration** (links campaigns to Telegram groups)
 - campaignId (ref to Campaign), telegramGroupId, telegramGroupType, apiKey
-- rewardLevels[], isActive, createdBy (ref to User)
+- supportLevels[] (IDs dos níveis de apoio que dão acesso ao grupo), isActive, createdBy (ref to User)
 - Now uses proper ObjectId references instead of strings
 
 **Member** (supporter in a Telegram group)

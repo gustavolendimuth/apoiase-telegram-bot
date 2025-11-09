@@ -11,9 +11,7 @@ interface Integration {
   telegramGroupTitle: string;
   telegramGroupType: 'group' | 'supergroup' | 'channel';
   apiKey?: string;
-  accessMode: 'reward_levels' | 'min_amount';
-  minAmount?: number;
-  rewardLevels: string[];
+  minSupportLevel?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -52,7 +50,7 @@ export const useIntegrations = (campaignId?: string) => {
   const createIntegration = async (data: {
     campaignId: string;
     telegramGroupId: string;
-    rewardLevels: string[];
+    minSupportLevel?: string;
   }): Promise<Integration | null> => {
     try {
       const response = await api.post('/api/integrations', data);
@@ -71,7 +69,7 @@ export const useIntegrations = (campaignId?: string) => {
 
   const updateIntegration = async (
     id: string,
-    data: { rewardLevels?: string[]; isActive?: boolean }
+    data: { minSupportLevel?: string; isActive?: boolean }
   ): Promise<boolean> => {
     try {
       const response = await api.put(`/api/integrations/${id}`, data);

@@ -2,6 +2,7 @@ import axios from 'axios';
 import Integration from '../models/Integration';
 import Support from '../models/Support';
 import User from '../models/User';
+import Campaign from '../models/Campaign';
 import memberService from './memberService';
 import logger from '../config/logger';
 
@@ -12,7 +13,7 @@ interface SupporterData {
   id: string;
   email: string;
   campaignId: string;
-  rewardLevel: string;
+  supportLevel: string; // Nível de apoio
   amount: number; // Valor da contribuição
   status: 'active' | 'inactive' | 'cancelled';
   paymentStatus: 'up_to_date' | 'overdue' | 'failed';
@@ -59,7 +60,7 @@ export class VerificationService {
         id: (support._id as any).toString(),
         email: user.email,
         campaignId: campaignId,
-        rewardLevel: support.rewardLevelId || 'basic',
+        supportLevel: support.rewardLevelId || 'basic', // Renomeado de rewardLevel para supportLevel
         amount: support.amount, // Incluir valor da contribuição
         status: isActive ? 'active' : support.status === 'cancelled' ? 'cancelled' : 'inactive',
         paymentStatus: isPaymentOk ? 'up_to_date' : support.status === 'payment_failed' ? 'failed' : 'overdue',
@@ -138,28 +139,51 @@ export class VerificationService {
         };
       }
 
-      // Verificar acesso baseado no modo configurado
-      if (integration.accessMode === 'reward_levels') {
-        // Modo por níveis de recompensa específicos
-        if (
-          integration.rewardLevels &&
-          integration.rewardLevels.length > 0 &&
-          !integration.rewardLevels.includes(supporterData.rewardLevel)
-        ) {
+      // Verificar acesso baseado no nível mínimo de apoio (hierárquico)
+      if (integration.minSupportLevel) {
+        // Buscar campanha para obter a hierarquia de níveis de apoio
+        const campaign = await Campaign.findById(integration.campaignId);
+
+        if (!campaign) {
           return {
             hasAccess: false,
-            reason: 'Nível de recompensa não dá acesso a este grupo',
+            reason: 'Campanha não encontrada',
             supporterData,
           };
         }
-      } else if (integration.accessMode === 'min_amount') {
-        // Modo por valor mínimo de contribuição
-        if (integration.minAmount && supporterData.amount < integration.minAmount) {
+
+        // Encontrar o nível mínimo configurado e o nível do usuário
+        const minLevel = campaign.rewardLevels.find(
+          (level) => level.id === integration.minSupportLevel
+        );
+        const userLevel = campaign.rewardLevels.find(
+          (level) => level.id === supporterData.supportLevel
+        );
+
+        // Se não encontrou o nível do usuário ou o nível mínimo, negar acesso
+        if (!userLevel) {
           return {
             hasAccess: false,
-            reason: `Valor de contribuição insuficiente. Mínimo: R$ ${integration.minAmount.toFixed(2)}`,
+            reason: 'Nível de apoio não encontrado',
             supporterData,
           };
+        }
+
+        if (!minLevel) {
+          logger.warn('Nível mínimo configurado não encontrado na campanha', {
+            integrationId: integration._id,
+            minSupportLevel: integration.minSupportLevel,
+          });
+          // Permitir acesso se o nível mínimo configurado não existe mais
+        } else {
+          // Verificar se o valor do apoio do usuário é >= ao valor mínimo
+          if (userLevel.amount < minLevel.amount) {
+            return {
+              hasAccess: false,
+              reason: `Nível de apoio insuficiente. Necessário: ${minLevel.title} (${minLevel.amount}) ou superior`,
+              supporterData,
+            };
+          }
         }
       }
 

@@ -301,6 +301,50 @@ export class IntegrationAuthService {
   }
 
   /**
+   * Processa seleção do nível mínimo de apoio
+   */
+  async processMinSupportLevelSelection(
+    stateToken: string,
+    minSupportLevel: string
+  ): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    try {
+      const session = await IntegrationAuthSession.findOne({
+        stateToken,
+        status: 'group_selected',
+      });
+
+      if (!session || !session.isValid()) {
+        return {
+          success: false,
+          error: 'Sessão inválida ou expirada',
+        };
+      }
+
+      session.selectedMinSupportLevel = minSupportLevel;
+      session.status = 'min_support_level_selected';
+      await session.save();
+
+      logger.info('Nível mínimo de apoio selecionado', {
+        stateToken,
+        minSupportLevel,
+      });
+
+      return {
+        success: true,
+      };
+    } catch (error: any) {
+      logger.error('Erro ao processar seleção de nível mínimo de apoio', { error: error.message });
+      return {
+        success: false,
+        error: 'Erro ao processar seleção de nível mínimo de apoio',
+      };
+    }
+  }
+
+  /**
    * Finaliza autorização e cria integração
    */
   async completeAuthorization(
@@ -312,10 +356,10 @@ export class IntegrationAuthService {
     error?: string;
   }> {
     try {
-      // 1. Buscar sessão
+      // 1. Buscar sessão (aceita tanto group_selected quanto min_support_level_selected)
       const session = await IntegrationAuthSession.findOne({
         stateToken,
-        status: 'group_selected',
+        status: { $in: ['group_selected', 'min_support_level_selected'] },
       });
 
       if (!session || !session.isValid()) {
@@ -371,7 +415,7 @@ export class IntegrationAuthService {
         };
       }
 
-      // 6. Criar integração com accessMode padrão de 'min_amount' (qualquer valor)
+      // 6. Criar integração com nível mínimo de apoio selecionado
       const apiKey = integrationService.generateApiKey();
 
       const integration = await Integration.create({
@@ -381,9 +425,7 @@ export class IntegrationAuthService {
         telegramGroupType: 'supergroup',
         telegramGroupTitle: session.selectedGroupTitle!,
         apiKey,
-        accessMode: 'min_amount', // Modo padrão: por valor mínimo
-        minAmount: 0, // Valor mínimo inicial (permitir qualquer valor)
-        rewardLevels: [],
+        minSupportLevel: session.selectedMinSupportLevel, // Nível mínimo de apoio (este e superiores têm acesso)
         isActive: true,
         createdBy: makerId,
         apoiaseApiKey: session.apoiaseApiKey,

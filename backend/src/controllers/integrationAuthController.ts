@@ -143,6 +143,49 @@ export class IntegrationAuthController {
   }
 
   /**
+   * POST /integration/select-min-support-level
+   * Processa seleção do nível mínimo de apoio que dará acesso ao grupo
+   */
+  async selectMinSupportLevel(req: Request, res: Response) {
+    try {
+      const { stateToken, minSupportLevel } = req.body;
+
+      if (!stateToken) {
+        return res.status(400).json({
+          error: 'State token obrigatório',
+        });
+      }
+
+      if (typeof minSupportLevel !== 'string') {
+        return res.status(400).json({
+          error: 'minSupportLevel deve ser uma string',
+        });
+      }
+
+      const result = await integrationAuthService.processMinSupportLevelSelection(
+        stateToken,
+        minSupportLevel
+      );
+
+      if (!result.success) {
+        return res.status(400).json({
+          error: result.error,
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Nível mínimo de apoio selecionado com sucesso',
+      });
+    } catch (error: any) {
+      logger.error('Erro ao selecionar nível mínimo de apoio', { error: error.message });
+      res.status(500).json({
+        error: 'Erro ao selecionar nível mínimo de apoio',
+      });
+    }
+  }
+
+  /**
    * POST /integration/complete
    * Finaliza autorização e cria integração
    * Público - validado por state token
@@ -205,6 +248,7 @@ export class IntegrationAuthController {
         telegramFirstName: session.telegramFirstName,
         selectedGroupId: session.selectedGroupId,
         selectedGroupTitle: session.selectedGroupTitle,
+        selectedMinSupportLevel: session.selectedMinSupportLevel,
         expiresAt: session.expiresAt,
         isValid: session.isValid(),
       });

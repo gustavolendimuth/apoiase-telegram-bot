@@ -7,7 +7,16 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Loading } from '@/components/ui/Loading';
 import { TelegramGroupSelector } from '@/components/TelegramGroupSelector';
+import { SupportLevelSelector } from '@/components/SupportLevelSelector';
 import { useAuth } from '@/hooks/useAuth';
+
+interface RewardLevel {
+  id: string;
+  title: string;
+  amount: number;
+  description: string;
+  benefits: string[];
+}
 
 interface SessionData {
   stateToken: string;
@@ -18,6 +27,7 @@ interface SessionData {
   telegramFirstName?: string;
   selectedGroupId?: string;
   selectedGroupTitle?: string;
+  selectedMinSupportLevel?: string;
   expiresAt: string;
   isValid: boolean;
   redirectUri?: string;
@@ -30,7 +40,8 @@ function IntegrationAuthorizePageContent() {
   const [error, setError] = useState<string | null>(null);
   const [stateToken, setStateToken] = useState<string | null>(null);
   const [session, setSession] = useState<SessionData | null>(null);
-  const [step, setStep] = useState<'init' | 'telegram_auth' | 'select_group' | 'complete'>('init');
+  const [campaignData, setCampaignData] = useState<{ rewardLevels: RewardLevel[] } | null>(null);
+  const [step, setStep] = useState<'init' | 'telegram_auth' | 'select_group' | 'select_min_support_level' | 'complete'>('init');
 
   useEffect(() => {
     initializeAuth();
@@ -70,6 +81,9 @@ function IntegrationAuthorizePageContent() {
         // Carregar dados da sessão
         await loadSession(token);
 
+        // Carregar dados da campanha (incluindo níveis de apoio)
+        await loadCampaignData(campaignSlug);
+
         setStep('telegram_auth');
       } else {
         setError(response.data.error || 'Erro ao iniciar autorização');
@@ -91,10 +105,25 @@ function IntegrationAuthorizePageContent() {
       if (response.data.status === 'telegram_auth_complete') {
         setStep('select_group');
       } else if (response.data.status === 'group_selected') {
+        setStep('select_min_support_level');
+      } else if (response.data.status === 'min_support_level_selected') {
         setStep('complete');
       }
     } catch (err) {
       console.error('Erro ao carregar sessão:', err);
+    }
+  };
+
+  const loadCampaignData = async (campaignSlug: string) => {
+    try {
+      const response = await api.get(`/api/campaigns/slug/${campaignSlug}`);
+      setCampaignData({
+        rewardLevels: response.data.campaign?.rewardLevels || [],
+      });
+    } catch (err) {
+      console.error('Erro ao carregar dados da campanha:', err);
+      // Não bloqueia o fluxo se não conseguir carregar
+      setCampaignData({ rewardLevels: [] });
     }
   };
 
@@ -115,6 +144,35 @@ function IntegrationAuthorizePageContent() {
     } catch (err: any) {
       console.error('Erro ao processar Telegram auth:', err);
       setError(err.response?.data?.error || 'Erro ao autenticar com Telegram');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMinSupportLevelSelected = async (minLevelId: string | null) => {
+    try {
+      if (!stateToken) return;
+
+      setLoading(true);
+
+      // Se nenhum nível foi selecionado, ir direto para complete
+      if (minLevelId === null) {
+        setStep('complete');
+        setLoading(false);
+        return;
+      }
+
+      await api.post('/api/integration/select-min-support-level', {
+        stateToken,
+        minSupportLevel: minLevelId,
+      });
+
+      // Recarregar sessão
+      await loadSession(stateToken);
+      setStep('complete');
+    } catch (err: any) {
+      console.error('Erro ao selecionar nível mínimo de apoio:', err);
+      setError(err.response?.data?.error || 'Erro ao selecionar nível mínimo de apoio');
     } finally {
       setLoading(false);
     }
@@ -286,14 +344,34 @@ function IntegrationAuthorizePageContent() {
               stateToken={stateToken}
               onGroupSelected={async () => {
                 await loadSession(stateToken);
-                setStep('complete');
+                setStep('select_min_support_level');
               }}
               onCancel={handleCancel}
             />
           </div>
         )}
 
-        {/* Step 3: Complete */}
+        {/* Step 3: Select Minimum Support Level */}
+        {step === 'select_min_support_level' && campaignData && (
+          <div className="space-y-6">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-green-500">✓</span>
+                <h2 className="font-semibold text-green-900">Grupo Selecionado</h2>
+              </div>
+              <p className="text-sm text-green-700">{session?.selectedGroupTitle}</p>
+            </div>
+
+            <SupportLevelSelector
+              campaignSlug={session?.campaignSlug || ''}
+              rewardLevels={campaignData.rewardLevels}
+              onLevelSelected={handleMinSupportLevelSelected}
+              onCancel={() => setStep('select_group')}
+            />
+          </div>
+        )}
+
+        {/* Step 4: Complete */}
         {step === 'complete' && (
           <CompleteIntegration
             stateToken={stateToken!}
@@ -406,10 +484,26 @@ function CompleteIntegration({
           <p className="text-sm text-green-700">{session?.selectedGroupTitle}</p>
           <p className="text-xs text-green-600 mt-1">ID: {session?.selectedGroupId}</p>
         </div>
+
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-green-500">✓</span>
+            <h2 className="font-semibold text-green-900">Níveis de Apoio</h2>
+          </div>
+          {session?.selectedSupportLevels && session.selectedSupportLevels.length > 0 ? (
+            <p className="text-sm text-green-700">
+              {session.selectedSupportLevels.length} {session.selectedSupportLevels.length === 1 ? 'nível selecionado' : 'níveis selecionados'}
+            </p>
+          ) : (
+            <p className="text-sm text-green-700">
+              Todos os apoiadores terão acesso
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h2 className="font-semibold text-blue-900 mb-2">Passo 3: Finalizar Integração</h2>
+        <h2 className="font-semibold text-blue-900 mb-2">Passo 4: Finalizar Integração</h2>
         <p className="text-sm text-blue-700 mb-3">
           Clique em "Finalizar" para completar a integração entre sua campanha e o grupo Telegram.
         </p>

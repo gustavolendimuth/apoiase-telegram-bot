@@ -4,7 +4,7 @@ export interface ITelegramAuthToken extends Document {
   token: string;
   campaignId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
-  rewardLevels: string[];
+  minSupportLevel?: string;
   status: 'pending' | 'used' | 'expired';
   expiresAt: Date;
   usedAt?: Date;
@@ -30,9 +30,9 @@ const TelegramAuthTokenSchema: Schema = new Schema(
       ref: 'User',
       required: true,
     },
-    rewardLevels: {
-      type: [String],
-      default: [],
+    minSupportLevel: {
+      type: String,
+      required: false,
     },
     status: {
       type: String,

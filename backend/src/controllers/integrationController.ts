@@ -13,33 +13,12 @@ export class IntegrationController {
    */
   async create(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const { campaignId, telegramGroupId, accessMode, rewardLevels, minAmount } = req.body;
+      const { campaignId, telegramGroupId, minSupportLevel } = req.body;
 
       // Validações
       if (!campaignId || !telegramGroupId) {
         res.status(400).json({
           error: 'campaignId e telegramGroupId são obrigatórios',
-        });
-        return;
-      }
-
-      if (!accessMode || !['reward_levels', 'min_amount'].includes(accessMode)) {
-        res.status(400).json({
-          error: 'accessMode deve ser "reward_levels" ou "min_amount"',
-        });
-        return;
-      }
-
-      if (accessMode === 'min_amount' && minAmount === undefined) {
-        res.status(400).json({
-          error: 'minAmount é obrigatório quando accessMode é "min_amount"',
-        });
-        return;
-      }
-
-      if (accessMode === 'reward_levels' && (!rewardLevels || rewardLevels.length === 0)) {
-        res.status(400).json({
-          error: 'rewardLevels é obrigatório quando accessMode é "reward_levels"',
         });
         return;
       }
@@ -55,9 +34,7 @@ export class IntegrationController {
         telegramGroupId,
         req.user.id,
         {
-          accessMode,
-          rewardLevels: accessMode === 'reward_levels' ? rewardLevels : [],
-          minAmount: accessMode === 'min_amount' ? minAmount : undefined,
+          minSupportLevel,
         }
       );
 
@@ -75,9 +52,7 @@ export class IntegrationController {
           telegramGroupTitle: integration.telegramGroupTitle,
           telegramGroupType: integration.telegramGroupType,
           apiKey: integration.apiKey,
-          accessMode: integration.accessMode,
-          rewardLevels: integration.rewardLevels,
-          minAmount: integration.minAmount,
+          minSupportLevel: integration.minSupportLevel,
           isActive: integration.isActive,
           createdAt: integration.createdAt,
         },
@@ -121,9 +96,7 @@ export class IntegrationController {
           telegramGroupId: integration.telegramGroupId,
           telegramGroupTitle: integration.telegramGroupTitle,
           telegramGroupType: integration.telegramGroupType,
-          accessMode: integration.accessMode,
-          rewardLevels: integration.rewardLevels,
-          minAmount: integration.minAmount,
+          minSupportLevel: integration.minSupportLevel,
           isActive: integration.isActive,
           createdAt: integration.createdAt,
           updatedAt: integration.updatedAt,
@@ -177,9 +150,7 @@ export class IntegrationController {
           telegramGroupTitle: integration.telegramGroupTitle,
           telegramGroupType: integration.telegramGroupType,
           apiKey: integration.apiKey,
-          accessMode: integration.accessMode,
-          rewardLevels: integration.rewardLevels,
-          minAmount: integration.minAmount,
+          minSupportLevel: integration.minSupportLevel,
           isActive: integration.isActive,
           createdAt: integration.createdAt,
           updatedAt: integration.updatedAt,
@@ -200,7 +171,7 @@ export class IntegrationController {
   async update(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { accessMode, rewardLevels, minAmount, isActive } = req.body;
+      const { minSupportLevel, isActive } = req.body;
 
       if (!req.user) {
         res.status(401).json({ error: 'Não autenticado' });
@@ -218,9 +189,7 @@ export class IntegrationController {
       }
 
       const updates: any = {};
-      if (accessMode !== undefined) updates.accessMode = accessMode;
-      if (rewardLevels !== undefined) updates.rewardLevels = rewardLevels;
-      if (minAmount !== undefined) updates.minAmount = minAmount;
+      if (minSupportLevel !== undefined) updates.minSupportLevel = minSupportLevel;
       if (isActive !== undefined) updates.isActive = isActive;
 
       const integration = await integrationService.updateIntegration(id, updates);
@@ -245,9 +214,7 @@ export class IntegrationController {
           campaignId: integration.campaignId,
           telegramGroupId: integration.telegramGroupId,
           telegramGroupTitle: integration.telegramGroupTitle,
-          accessMode: integration.accessMode,
-          rewardLevels: integration.rewardLevels,
-          minAmount: integration.minAmount,
+          minSupportLevel: integration.minSupportLevel,
           isActive: integration.isActive,
           updatedAt: integration.updatedAt,
         },
@@ -480,7 +447,7 @@ export class IntegrationController {
    */
   async startTelegramAuth(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const { campaignId, rewardLevels } = req.body;
+      const { campaignId, minSupportLevel } = req.body;
 
       if (!campaignId) {
         res.status(400).json({
@@ -497,7 +464,7 @@ export class IntegrationController {
       const result = await integrationService.startTelegramAuthorization(
         campaignId,
         req.user.id,
-        rewardLevels || []
+        minSupportLevel || []
       );
 
       logger.info('Autorização do Telegram iniciada:', {
