@@ -11,6 +11,8 @@ interface Integration {
   telegramGroupTitle: string;
   telegramGroupType: 'group' | 'supergroup' | 'channel';
   apiKey?: string;
+  accessMode: 'reward_levels' | 'min_amount';
+  minAmount?: number;
   rewardLevels: string[];
   isActive: boolean;
   createdAt: string;
