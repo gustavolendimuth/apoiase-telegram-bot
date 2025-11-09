@@ -784,40 +784,26 @@ function CampaignSettingsContent() {
                             <div className="border-t border-gray-200 bg-white p-4">
                               <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
-                                  <span className="font-medium text-gray-700">Modo de Acesso:</span>
+                                  <span className="font-medium text-gray-700">Controle de Acesso:</span>
                                   <p className="text-gray-900">
-                                    {integration.accessMode === 'min_amount'
-                                      ? 'Valor Mínimo'
-                                      : 'Níveis de Recompensa'}
+                                    {integration.minSupportLevel
+                                      ? 'Nível Mínimo Configurado'
+                                      : 'Todos os Apoiadores'}
                                   </p>
                                 </div>
-                                {integration.accessMode === 'min_amount' && (
-                                  <div>
-                                    <span className="font-medium text-gray-700">Valor Mínimo:</span>
-                                    <p className="text-gray-900">
-                                      R$ {(integration.minAmount || 0).toFixed(2)}
-                                    </p>
-                                  </div>
-                                )}
-                                {integration.accessMode === 'reward_levels' && (
+                                {integration.minSupportLevel && (
                                   <div className="col-span-2">
-                                    <span className="font-medium text-gray-700">Níveis com Acesso:</span>
-                                    {integration.rewardLevels && integration.rewardLevels.length > 0 ? (
-                                      <ul className="list-disc list-inside text-gray-900 mt-1">
-                                        {integration.rewardLevels.map((levelId: string) => {
-                                          const level = campaign?.rewardLevels.find((l) => l.id === levelId);
-                                          return level ? (
-                                            <li key={levelId}>
-                                              {level.title} (R$ {level.amount.toFixed(2)})
-                                            </li>
-                                          ) : (
-                                            <li key={levelId}>{levelId}</li>
-                                          );
-                                        })}
-                                      </ul>
-                                    ) : (
-                                      <p className="text-gray-500 text-sm">Nenhum nível selecionado</p>
-                                    )}
+                                    <span className="font-medium text-gray-700">Nível Mínimo de Apoio:</span>
+                                    {(() => {
+                                      const level = campaign?.rewardLevels.find((l) => l.id === integration.minSupportLevel);
+                                      return level ? (
+                                        <p className="text-gray-900 mt-1">
+                                          {level.title} (R$ {level.amount.toFixed(2)}) e superiores
+                                        </p>
+                                      ) : (
+                                        <p className="text-gray-900 mt-1">{integration.minSupportLevel}</p>
+                                      );
+                                    })()}
                                   </div>
                                 )}
                               </div>
