@@ -47,6 +47,13 @@ function CampaignSettingsContent() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [disconnectingIntegrationId, setDisconnectingIntegrationId] = useState<string | null>(null);
 
+  // Integration edit state
+  const [editingIntegration, setEditingIntegration] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState<'reward_levels' | 'min_amount'>('min_amount');
+  const [editMinAmount, setEditMinAmount] = useState<number>(0);
+  const [editRewardLevels, setEditRewardLevels] = useState<string[]>([]);
+  const [savingIntegration, setSavingIntegration] = useState(false);
+
   // Edit form state
   const [editFormData, setEditFormData] = useState({
     title: '',
@@ -139,6 +146,54 @@ function CampaignSettingsContent() {
       setError('Erro ao desconectar integração com Telegram');
     } finally {
       setDisconnectingIntegrationId(null);
+    }
+  };
+
+  const handleStartEdit = (integration: any) => {
+    setEditingIntegration(integration.id);
+    setEditMode(integration.accessMode || 'min_amount');
+    setEditMinAmount(integration.minAmount || 0);
+    setEditRewardLevels(integration.rewardLevels || []);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingIntegration(null);
+  };
+
+  const handleSaveEdit = async (integrationId: string) => {
+    try {
+      setSavingIntegration(true);
+      setError('');
+
+      const updates: any = {
+        accessMode: editMode,
+      };
+
+      if (editMode === 'min_amount') {
+        updates.minAmount = editMinAmount;
+        updates.rewardLevels = [];
+      } else {
+        updates.rewardLevels = editRewardLevels;
+        updates.minAmount = undefined;
+      }
+
+      await api.put(`/api/integrations/${integrationId}`, updates);
+
+      // Reload integrations
+      window.location.reload();
+    } catch (err: any) {
+      console.error('Erro ao atualizar integração:', err);
+      setError(err.response?.data?.error || 'Erro ao atualizar integração');
+    } finally {
+      setSavingIntegration(false);
+    }
+  };
+
+  const handleToggleRewardLevel = (levelId: string) => {
+    if (editRewardLevels.includes(levelId)) {
+      setEditRewardLevels(editRewardLevels.filter((id) => id !== levelId));
+    } else {
+      setEditRewardLevels([...editRewardLevels, levelId]);
     }
   };
 
@@ -582,39 +637,192 @@ function CampaignSettingsContent() {
                 <div className="border-t border-gray-200">
                   <div className="p-6">
                     <h4 className="font-semibold text-gray-900 mb-4">Grupos conectados</h4>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {integrations.map((integration) => (
                         <div
                           key={integration.id}
-                          className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                          className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden"
                         >
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white">
-                              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18.717-1.953 9.216-2.762 12.226-.342 1.271-.678 1.697-1.113 1.738-.945.087-1.663-.625-2.577-1.225-1.431-.937-2.24-1.521-3.63-2.434-1.606-1.056-.565-1.637.351-2.585.24-.249 4.397-4.031 4.478-4.373.01-.043.02-.203-.076-.288-.095-.085-.234-.056-.335-.033-.143.032-2.421 1.538-6.834 4.516-.647.445-1.233.661-1.759.65-.579-.013-1.692-.327-2.521-.596-.867-.29-1.556-.443-1.495-.935.032-.256.38-.518.985-.787 3.861-1.683 6.434-2.795 7.72-3.333 3.677-1.531 4.442-1.798 4.939-1.806.109-.002.354.025.513.154.134.109.171.256.189.36.018.103.041.339.023.523z"/>
-                              </svg>
+                          {/* Integration Header */}
+                          <div className="flex items-center justify-between p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white">
+                                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18.717-1.953 9.216-2.762 12.226-.342 1.271-.678 1.697-1.113 1.738-.945.087-1.663-.625-2.577-1.225-1.431-.937-2.24-1.521-3.63-2.434-1.606-1.056-.565-1.637.351-2.585.24-.249 4.397-4.031 4.478-4.373.01-.043.02-.203-.076-.288-.095-.085-.234-.056-.335-.033-.143.032-2.421 1.538-6.834 4.516-.647.445-1.233.661-1.759.65-.579-.013-1.692-.327-2.521-.596-.867-.29-1.556-.443-1.495-.935.032-.256.38-.518.985-.787 3.861-1.683 6.434-2.795 7.72-3.333 3.677-1.531 4.442-1.798 4.939-1.806.109-.002.354.025.513.154.134.109.171.256.189.36.018.103.041.339.023.523z"/>
+                                </svg>
+                              </div>
+                              <div>
+                                <div className="font-medium text-gray-900">
+                                  {integration.telegramGroupTitle || integration.telegramGroupId}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {integration.telegramGroupType === 'channel' ? 'Canal' : 'Grupo'}
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <div className="font-medium text-gray-900">
-                                {integration.telegramGroupTitle || integration.telegramGroupId}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {integration.telegramGroupType === 'channel' ? 'Canal' : 'Grupo'} • {integration.rewardLevels.length} recompensas
-                              </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant={integration.isActive ? "success" : "default"}>
+                                {integration.isActive ? "Ativo" : "Inativo"}
+                              </Badge>
+                              {editingIntegration !== integration.id && (
+                                <>
+                                  <button
+                                    onClick={() => handleStartEdit(integration)}
+                                    className="px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 rounded font-medium text-sm transition-colors"
+                                  >
+                                    Editar
+                                  </button>
+                                  <button
+                                    onClick={() => handleDisconnectTelegram(integration.id)}
+                                    disabled={disconnectingIntegrationId === integration.id}
+                                    className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {disconnectingIntegrationId === integration.id ? 'Desconectando...' : 'Desconectar'}
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <Badge variant={integration.isActive ? "success" : "default"}>
-                              {integration.isActive ? "Ativo" : "Inativo"}
-                            </Badge>
-                            <button
-                              onClick={() => handleDisconnectTelegram(integration.id)}
-                              disabled={disconnectingIntegrationId === integration.id}
-                              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {disconnectingIntegrationId === integration.id ? 'Desconectando...' : 'Desconectar'}
-                            </button>
-                          </div>
+
+                          {/* Edit Mode */}
+                          {editingIntegration === integration.id ? (
+                            <div className="border-t border-gray-200 bg-white p-4 space-y-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Modo de Controle de Acesso
+                                </label>
+                                <div className="space-y-2">
+                                  <label className="flex items-center gap-2">
+                                    <input
+                                      type="radio"
+                                      value="min_amount"
+                                      checked={editMode === 'min_amount'}
+                                      onChange={(e) => setEditMode(e.target.value as any)}
+                                      className="w-4 h-4"
+                                    />
+                                    <span className="text-sm">Valor Mínimo de Contribuição</span>
+                                  </label>
+                                  <label className="flex items-center gap-2">
+                                    <input
+                                      type="radio"
+                                      value="reward_levels"
+                                      checked={editMode === 'reward_levels'}
+                                      onChange={(e) => setEditMode(e.target.value as any)}
+                                      className="w-4 h-4"
+                                    />
+                                    <span className="text-sm">Níveis de Recompensa Específicos</span>
+                                  </label>
+                                </div>
+                              </div>
+
+                              {editMode === 'min_amount' && (
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Valor Mínimo (R$)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={editMinAmount}
+                                    onChange={(e) => setEditMinAmount(parseFloat(e.target.value) || 0)}
+                                    placeholder="0.00"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ed5544] focus:border-transparent"
+                                  />
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Apoiadores com contribuição igual ou superior a este valor terão acesso ao grupo.
+                                  </p>
+                                </div>
+                              )}
+
+                              {editMode === 'reward_levels' && (
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Selecione os Níveis de Recompensa
+                                  </label>
+                                  <div className="space-y-2">
+                                    {campaign?.rewardLevels.map((level) => (
+                                      <label key={level.id} className="flex items-start gap-2">
+                                        <input
+                                          type="checkbox"
+                                          checked={editRewardLevels.includes(level.id)}
+                                          onChange={() => handleToggleRewardLevel(level.id)}
+                                          className="w-4 h-4 mt-1"
+                                        />
+                                        <div className="flex-1">
+                                          <span className="text-sm font-medium">{level.title}</span>
+                                          <span className="text-sm text-gray-600 ml-2">
+                                            (R$ {level.amount.toFixed(2)})
+                                          </span>
+                                          <p className="text-xs text-gray-500">{level.description}</p>
+                                        </div>
+                                      </label>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="flex gap-2 pt-2">
+                                <button
+                                  onClick={handleCancelEdit}
+                                  className="flex-1 px-4 py-2 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 rounded font-medium text-sm transition-colors"
+                                  disabled={savingIntegration}
+                                >
+                                  Cancelar
+                                </button>
+                                <button
+                                  onClick={() => handleSaveEdit(integration.id)}
+                                  className="flex-1 px-4 py-2 bg-[#ed5544] hover:bg-[#d64435] text-white rounded font-medium text-sm transition-colors disabled:opacity-50"
+                                  disabled={savingIntegration}
+                                >
+                                  {savingIntegration ? 'Salvando...' : 'Salvar'}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            /* View Mode */
+                            <div className="border-t border-gray-200 bg-white p-4">
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <span className="font-medium text-gray-700">Modo de Acesso:</span>
+                                  <p className="text-gray-900">
+                                    {integration.accessMode === 'min_amount'
+                                      ? 'Valor Mínimo'
+                                      : 'Níveis de Recompensa'}
+                                  </p>
+                                </div>
+                                {integration.accessMode === 'min_amount' && (
+                                  <div>
+                                    <span className="font-medium text-gray-700">Valor Mínimo:</span>
+                                    <p className="text-gray-900">
+                                      R$ {(integration.minAmount || 0).toFixed(2)}
+                                    </p>
+                                  </div>
+                                )}
+                                {integration.accessMode === 'reward_levels' && (
+                                  <div className="col-span-2">
+                                    <span className="font-medium text-gray-700">Níveis com Acesso:</span>
+                                    {integration.rewardLevels && integration.rewardLevels.length > 0 ? (
+                                      <ul className="list-disc list-inside text-gray-900 mt-1">
+                                        {integration.rewardLevels.map((levelId: string) => {
+                                          const level = campaign?.rewardLevels.find((l) => l.id === levelId);
+                                          return level ? (
+                                            <li key={levelId}>
+                                              {level.title} (R$ {level.amount.toFixed(2)})
+                                            </li>
+                                          ) : (
+                                            <li key={levelId}>{levelId}</li>
+                                          );
+                                        })}
+                                      </ul>
+                                    ) : (
+                                      <p className="text-gray-500 text-sm">Nenhum nível selecionado</p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
