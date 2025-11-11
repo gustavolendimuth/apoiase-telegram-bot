@@ -10,7 +10,7 @@ import type {
   GetSessionResponse,
   CancelAuthResponse,
   ApiErrorResponse,
-} from '@shared/types';
+} from 'shared';
 
 /**
  * Controller para gerenciar fluxo de autorização OAuth-like
@@ -184,7 +184,7 @@ export class IntegrationAuthController {
             id: g.id,
             title: g.title,
             type: g.type,
-            memberCount: g.memberCount,
+            memberCount: g.memberCount ?? 0,
             hasExistingMembers: g.memberCount !== undefined && g.memberCount > 1,
           })),
         },

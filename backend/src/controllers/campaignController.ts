@@ -12,7 +12,7 @@ import type {
   DeleteCampaignResponse,
   SearchCampaignsResponse,
   ApiErrorResponse,
-} from '@shared/types';
+} from 'shared';
 
 export const createCampaign = async (
   req: AuthenticatedRequest,
@@ -38,7 +38,7 @@ export const createCampaign = async (
     res.status(201).json({
       success: true,
       data: {
-        campaign,
+        campaign: campaign as any,
         message: 'Campanha criada com sucesso!',
       },
     });
@@ -77,7 +77,7 @@ export const getCampaign = async (
 
     res.json({
       success: true,
-      data: campaign,
+      data: campaign as any,
     });
   } catch (error) {
     logger.error('Error in getCampaign:', error);
@@ -107,7 +107,7 @@ export const getCampaignBySlug = async (
 
     res.json({
       success: true,
-      data: campaign,
+      data: campaign as any,
     });
   } catch (error) {
     logger.error('Error in getCampaignBySlug:', error);
@@ -139,7 +139,7 @@ export const getMyCampaigns = async (
     res.json({
       success: true,
       data: {
-        campaigns,
+        campaigns: campaigns as any,
       },
     });
   } catch (error) {
@@ -174,7 +174,7 @@ export const getAllCampaigns = async (
     res.json({
       success: true,
       data: {
-        campaigns: result.campaigns,
+        campaigns: result.campaigns as any,
         total: result.total,
         page,
         limit: filters.limit,
@@ -220,7 +220,7 @@ export const updateCampaign = async (
     res.json({
       success: true,
       data: {
-        campaign,
+        campaign: campaign as any,
         message: 'Campanha atualizada com sucesso!',
       },
     });
@@ -305,7 +305,7 @@ export const searchCampaigns = async (
     res.json({
       success: true,
       data: {
-        campaigns,
+        campaigns: campaigns as any,
         total: campaigns.length,
       },
     });
