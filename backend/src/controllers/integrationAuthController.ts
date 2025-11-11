@@ -249,6 +249,53 @@ export class IntegrationAuthController {
   }
 
   /**
+   * POST /integration/select-min-support-level
+   * Processa seleção do nível mínimo de apoio
+   */
+  async selectMinSupportLevel(
+    req: Request,
+    res: Response<SelectGroupResponse | ApiErrorResponse>
+  ) {
+    try {
+      const { stateToken, minSupportLevel } = req.body;
+
+      if (!stateToken || !minSupportLevel) {
+        return res.status(400).json({
+          success: false,
+          error: 'Parâmetros obrigatórios ausentes',
+          message: 'Os parâmetros stateToken e minSupportLevel são obrigatórios',
+        });
+      }
+
+      const result = await integrationAuthService.processMinSupportLevelSelection(
+        stateToken,
+        minSupportLevel
+      );
+
+      if (!result.success) {
+        return res.status(400).json({
+          success: false,
+          error: result.error || 'Erro ao selecionar nível mínimo de apoio',
+        });
+      }
+
+      res.json({
+        success: true,
+        data: {
+          message: 'Nível mínimo de apoio selecionado com sucesso',
+        },
+      });
+    } catch (error: any) {
+      logger.error('Erro ao selecionar nível mínimo de apoio', { error: error.message });
+      res.status(500).json({
+        success: false,
+        error: 'Erro ao selecionar nível mínimo de apoio',
+        message: 'Erro interno ao selecionar nível mínimo de apoio. Tente novamente mais tarde.',
+      });
+    }
+  }
+
+  /**
    * POST /integration/complete
    * Finaliza autorização e cria integração
    */

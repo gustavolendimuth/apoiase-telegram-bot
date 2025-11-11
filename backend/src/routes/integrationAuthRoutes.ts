@@ -21,6 +21,9 @@ router.get('/available-groups', integrationAuthController.listAvailableGroups);
 // Seleciona grupo Telegram (público - mas validado por state token)
 router.post('/select-group', integrationAuthController.selectGroup);
 
+// Seleciona nível mínimo de apoio (público - mas validado por state token)
+router.post('/select-min-support-level', integrationAuthController.selectMinSupportLevel);
+
 // Finaliza e cria integração (público - validado por state token)
 router.post('/complete', integrationAuthController.completeAuthorization);
 
