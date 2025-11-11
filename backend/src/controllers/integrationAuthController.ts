@@ -1,6 +1,16 @@
 import { Request, Response } from 'express';
 import integrationAuthService, { TelegramAuthData } from '../services/integrationAuthService';
 import logger from '../config/logger';
+import type {
+  InitiateAuthResponse,
+  TelegramAuthResponse,
+  ListGroupsResponse,
+  SelectGroupResponse,
+  CompleteIntegrationResponse,
+  GetSessionResponse,
+  CancelAuthResponse,
+  ApiErrorResponse,
+} from '@shared/types';
 
 /**
  * Controller para gerenciar fluxo de autorização OAuth-like
@@ -9,21 +19,20 @@ export class IntegrationAuthController {
   /**
    * GET /integration/authorize
    * Inicia fluxo de autorização OAuth-like
-   * Query params esperados (do APOIA.se):
-   * - campaign_slug: slug da campanha
-   * - api_key: chave temporária
-   * - bearer_token: token temporário
-   * - redirect_uri: URL de callback do APOIA.se
    */
-  async initiateAuthorization(req: Request, res: Response) {
+  async initiateAuthorization(
+    req: Request,
+    res: Response<InitiateAuthResponse | ApiErrorResponse>
+  ) {
     try {
       const { campaign_slug, api_key, bearer_token, redirect_uri } = req.query;
 
       // Validar parâmetros
       if (!campaign_slug || !api_key || !bearer_token || !redirect_uri) {
         return res.status(400).json({
+          success: false,
           error: 'Parâmetros obrigatórios ausentes',
-          required: ['campaign_slug', 'api_key', 'bearer_token', 'redirect_uri'],
+          message: 'Os parâmetros campaign_slug, api_key, bearer_token e redirect_uri são obrigatórios',
         });
       }
 
@@ -37,20 +46,26 @@ export class IntegrationAuthController {
 
       if (!result.success) {
         return res.status(400).json({
-          error: result.error,
+          success: false,
+          error: result.error || 'Erro ao iniciar autorização',
         });
       }
 
       // Retornar state token e dados da campanha
       res.json({
         success: true,
-        stateToken: result.stateToken,
-        campaign: result.campaign,
+        data: {
+          stateToken: result.stateToken!,
+          campaign: result.campaign!,
+          redirectUrl: `/integration/authorize?state=${result.stateToken}`,
+        },
       });
     } catch (error: any) {
       logger.error('Erro no controller de autorização', { error: error.message });
       res.status(500).json({
+        success: false,
         error: 'Erro ao iniciar autorização',
+        message: 'Erro interno ao processar autorização. Tente novamente mais tarde.',
       });
     }
   }
@@ -59,21 +74,33 @@ export class IntegrationAuthController {
    * POST /integration/telegram-auth
    * Processa autenticação do Telegram Login Widget
    */
-  async processTelegramAuth(req: Request, res: Response) {
+  async processTelegramAuth(
+    req: Request,
+    res: Response<TelegramAuthResponse | ApiErrorResponse>
+  ) {
     try {
-      const { stateToken, ...telegramData } = req.body;
+      const { stateToken, authData } = req.body;
 
       if (!stateToken) {
         return res.status(400).json({
+          success: false,
           error: 'State token obrigatório',
+        });
+      }
+
+      if (!authData) {
+        return res.status(400).json({
+          success: false,
+          error: 'Dados de autenticação obrigatórios',
         });
       }
 
       // Validar dados do Telegram
       const requiredFields = ['id', 'first_name', 'auth_date', 'hash'];
       for (const field of requiredFields) {
-        if (!(field in telegramData)) {
+        if (!(field in authData)) {
           return res.status(400).json({
+            success: false,
             error: `Campo obrigatório ausente: ${field}`,
           });
         }
@@ -81,23 +108,93 @@ export class IntegrationAuthController {
 
       const result = await integrationAuthService.processTelegramAuth(
         stateToken,
-        telegramData as TelegramAuthData
+        authData as TelegramAuthData
       );
 
       if (!result.success) {
         return res.status(400).json({
-          error: result.error,
+          success: false,
+          error: result.error || 'Erro ao processar autenticação',
         });
       }
 
       res.json({
         success: true,
-        message: 'Autenticação Telegram confirmada',
+        data: {
+          message: 'Autenticação Telegram confirmada',
+          authenticated: true,
+        },
       });
     } catch (error: any) {
       logger.error('Erro ao processar Telegram auth', { error: error.message });
       res.status(500).json({
+        success: false,
         error: 'Erro ao processar autenticação',
+        message: 'Erro interno ao autenticar com Telegram. Tente novamente mais tarde.',
+      });
+    }
+  }
+
+  /**
+   * GET /integration/available-groups
+   * Lista grupos disponíveis onde o bot é administrador
+   */
+  async listAvailableGroups(
+    req: Request,
+    res: Response<ListGroupsResponse | ApiErrorResponse>
+  ) {
+    try {
+      const { stateToken } = req.query;
+
+      if (!stateToken) {
+        return res.status(400).json({
+          success: false,
+          error: 'State token obrigatório',
+        });
+      }
+
+      // Verificar se sessão é válida
+      const session = await integrationAuthService.getSession(stateToken as string);
+
+      if (!session || !session.isValid()) {
+        return res.status(400).json({
+          success: false,
+          error: 'Sessão inválida ou expirada',
+        });
+      }
+
+      // Obter serviço de descoberta de grupos
+      const telegramService = (await import('../services/telegramService')).default;
+      const groupDiscovery = telegramService.getGroupDiscoveryService();
+
+      if (!groupDiscovery) {
+        return res.status(500).json({
+          success: false,
+          error: 'Serviço de descoberta de grupos não disponível',
+        });
+      }
+
+      // Listar grupos disponíveis
+      const groups = await groupDiscovery.listAvailableGroups();
+
+      res.json({
+        success: true,
+        data: {
+          groups: groups.map(g => ({
+            id: g.id,
+            title: g.title,
+            type: g.type,
+            memberCount: g.memberCount,
+            hasExistingMembers: g.memberCount !== undefined && g.memberCount > 1,
+          })),
+        },
+      });
+    } catch (error: any) {
+      logger.error('Erro ao listar grupos', { error: error.message });
+      res.status(500).json({
+        success: false,
+        error: 'Erro ao listar grupos disponíveis',
+        message: 'Erro interno ao buscar grupos. Tente novamente mais tarde.',
       });
     }
   }
@@ -106,14 +203,18 @@ export class IntegrationAuthController {
    * POST /integration/select-group
    * Processa seleção do grupo Telegram
    */
-  async selectGroup(req: Request, res: Response) {
+  async selectGroup(
+    req: Request,
+    res: Response<SelectGroupResponse | ApiErrorResponse>
+  ) {
     try {
       const { stateToken, groupId, groupTitle } = req.body;
 
       if (!stateToken || !groupId || !groupTitle) {
         return res.status(400).json({
+          success: false,
           error: 'Parâmetros obrigatórios ausentes',
-          required: ['stateToken', 'groupId', 'groupTitle'],
+          message: 'Os parâmetros stateToken, groupId e groupTitle são obrigatórios',
         });
       }
 
@@ -125,62 +226,24 @@ export class IntegrationAuthController {
 
       if (!result.success) {
         return res.status(400).json({
-          error: result.error,
+          success: false,
+          error: result.error || 'Erro ao selecionar grupo',
         });
       }
 
       res.json({
         success: true,
-        message: 'Grupo selecionado com sucesso',
-        warning: result.warning,
+        data: {
+          message: 'Grupo selecionado com sucesso',
+          warning: result.warning,
+        },
       });
     } catch (error: any) {
       logger.error('Erro ao selecionar grupo', { error: error.message });
       res.status(500).json({
+        success: false,
         error: 'Erro ao selecionar grupo',
-      });
-    }
-  }
-
-  /**
-   * POST /integration/select-min-support-level
-   * Processa seleção do nível mínimo de apoio que dará acesso ao grupo
-   */
-  async selectMinSupportLevel(req: Request, res: Response) {
-    try {
-      const { stateToken, minSupportLevel } = req.body;
-
-      if (!stateToken) {
-        return res.status(400).json({
-          error: 'State token obrigatório',
-        });
-      }
-
-      if (typeof minSupportLevel !== 'string') {
-        return res.status(400).json({
-          error: 'minSupportLevel deve ser uma string',
-        });
-      }
-
-      const result = await integrationAuthService.processMinSupportLevelSelection(
-        stateToken,
-        minSupportLevel
-      );
-
-      if (!result.success) {
-        return res.status(400).json({
-          error: result.error,
-        });
-      }
-
-      res.json({
-        success: true,
-        message: 'Nível mínimo de apoio selecionado com sucesso',
-      });
-    } catch (error: any) {
-      logger.error('Erro ao selecionar nível mínimo de apoio', { error: error.message });
-      res.status(500).json({
-        error: 'Erro ao selecionar nível mínimo de apoio',
+        message: 'Erro interno ao selecionar grupo. Tente novamente mais tarde.',
       });
     }
   }
@@ -188,14 +251,17 @@ export class IntegrationAuthController {
   /**
    * POST /integration/complete
    * Finaliza autorização e cria integração
-   * Público - validado por state token
    */
-  async completeAuthorization(req: Request, res: Response) {
+  async completeAuthorization(
+    req: Request,
+    res: Response<CompleteIntegrationResponse | ApiErrorResponse>
+  ) {
     try {
       const { stateToken } = req.body;
 
       if (!stateToken) {
         return res.status(400).json({
+          success: false,
           error: 'State token obrigatório',
         });
       }
@@ -204,19 +270,25 @@ export class IntegrationAuthController {
 
       if (!result.success) {
         return res.status(400).json({
-          error: result.error,
+          success: false,
+          error: result.error || 'Erro ao completar autorização',
         });
       }
 
       res.json({
         success: true,
-        integrationId: result.integrationId,
-        integration: result.integration,
+        data: {
+          integration: result.integration!,
+          integrationId: result.integrationId!,
+          message: 'Integração criada com sucesso!',
+        },
       });
     } catch (error: any) {
       logger.error('Erro ao completar autorização', { error: error.message });
       res.status(500).json({
+        success: false,
         error: 'Erro ao finalizar integração',
+        message: 'Erro interno ao criar integração. Tente novamente mais tarde.',
       });
     }
   }
@@ -225,7 +297,10 @@ export class IntegrationAuthController {
    * GET /integration/session/:stateToken
    * Busca informações da sessão de autorização
    */
-  async getSession(req: Request, res: Response) {
+  async getSession(
+    req: Request,
+    res: Response<GetSessionResponse | ApiErrorResponse>
+  ) {
     try {
       const { stateToken } = req.params;
 
@@ -233,29 +308,32 @@ export class IntegrationAuthController {
 
       if (!session) {
         return res.status(404).json({
+          success: false,
           error: 'Sessão não encontrada',
         });
       }
 
       // Retornar apenas dados seguros (sem credenciais)
       res.json({
-        stateToken: session.stateToken,
-        campaignSlug: session.campaignSlug,
-        redirectUri: session.redirectUri,
-        status: session.status,
-        telegramUserId: session.telegramUserId,
-        telegramUsername: session.telegramUsername,
-        telegramFirstName: session.telegramFirstName,
-        selectedGroupId: session.selectedGroupId,
-        selectedGroupTitle: session.selectedGroupTitle,
-        selectedMinSupportLevel: session.selectedMinSupportLevel,
-        expiresAt: session.expiresAt,
-        isValid: session.isValid(),
+        success: true,
+        data: {
+          session: {
+            stateToken: session.stateToken,
+            status: session.status,
+            campaignSlug: session.campaignSlug,
+            telegramUserId: session.telegramUserId,
+            telegramUsername: session.telegramUsername,
+            telegramGroupId: session.selectedGroupId,
+            telegramGroupTitle: session.selectedGroupTitle,
+          },
+        },
       });
     } catch (error: any) {
       logger.error('Erro ao buscar sessão', { error: error.message });
       res.status(500).json({
+        success: false,
         error: 'Erro ao buscar sessão',
+        message: 'Erro interno ao buscar sessão. Tente novamente mais tarde.',
       });
     }
   }
@@ -264,12 +342,16 @@ export class IntegrationAuthController {
    * POST /integration/cancel
    * Cancela autorização
    */
-  async cancelAuthorization(req: Request, res: Response) {
+  async cancelAuthorization(
+    req: Request,
+    res: Response<CancelAuthResponse | ApiErrorResponse>
+  ) {
     try {
       const { stateToken } = req.body;
 
       if (!stateToken) {
         return res.status(400).json({
+          success: false,
           error: 'State token obrigatório',
         });
       }
@@ -278,67 +360,16 @@ export class IntegrationAuthController {
 
       res.json({
         success: true,
-        message: 'Autorização cancelada',
+        data: {
+          message: 'Autorização cancelada',
+        },
       });
     } catch (error: any) {
       logger.error('Erro ao cancelar autorização', { error: error.message });
       res.status(500).json({
+        success: false,
         error: 'Erro ao cancelar autorização',
-      });
-    }
-  }
-
-  /**
-   * GET /integration/available-groups
-   * Lista grupos disponíveis onde o bot é administrador
-   * Requer state token válido
-   */
-  async listAvailableGroups(req: Request, res: Response) {
-    try {
-      const { stateToken } = req.query;
-
-      if (!stateToken) {
-        return res.status(400).json({
-          error: 'State token obrigatório',
-        });
-      }
-
-      // Verificar se sessão é válida
-      const session = await integrationAuthService.getSession(stateToken as string);
-
-      if (!session || !session.isValid()) {
-        return res.status(400).json({
-          error: 'Sessão inválida ou expirada',
-        });
-      }
-
-      // Obter serviço de descoberta de grupos da instância singleton do TelegramService
-      const telegramService = (await import('../services/telegramService')).default;
-      const groupDiscovery = telegramService.getGroupDiscoveryService();
-
-      if (!groupDiscovery) {
-        return res.status(500).json({
-          error: 'Serviço de descoberta de grupos não disponível',
-        });
-      }
-
-      // Listar grupos disponíveis
-      const groups = await groupDiscovery.listAvailableGroups();
-
-      res.json({
-        success: true,
-        groups: groups.map(g => ({
-          id: g.id,
-          title: g.title,
-          type: g.type,
-          memberCount: g.memberCount,
-          hasExistingMembers: g.memberCount !== undefined && g.memberCount > 1, // >1 porque bot conta como membro
-        })),
-      });
-    } catch (error: any) {
-      logger.error('Erro ao listar grupos', { error: error.message });
-      res.status(500).json({
-        error: 'Erro ao listar grupos disponíveis',
+        message: 'Erro interno ao cancelar. Tente novamente mais tarde.',
       });
     }
   }
@@ -346,7 +377,6 @@ export class IntegrationAuthController {
   /**
    * GET /integration/callback
    * Endpoint de callback que redireciona de volta ao APOIA.se
-   * Usado quando o processo é concluído
    */
   async handleCallback(req: Request, res: Response) {
     try {

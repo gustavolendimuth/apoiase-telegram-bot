@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import api from '@/lib/api';
+import { campaignApi, integrationAuthApi } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Loading } from '@/components/ui/Loading';
@@ -41,6 +41,7 @@ function IntegrationAuthorizePageContent() {
   const [stateToken, setStateToken] = useState<string | null>(null);
   const [session, setSession] = useState<SessionData | null>(null);
   const [campaignData, setCampaignData] = useState<{ rewardLevels: RewardLevel[] } | null>(null);
+  const [campaignTitle, setCampaignTitle] = useState<string>('');
   const [step, setStep] = useState<'init' | 'telegram_auth' | 'select_group' | 'select_min_support_level' | 'complete'>('init');
 
   useEffect(() => {
@@ -65,17 +66,15 @@ function IntegrationAuthorizePageContent() {
       }
 
       // Iniciar autorização OAuth-like
-      const response = await api.get('/api/integration/authorize', {
-        params: {
-          campaign_slug: campaignSlug,
-          api_key: apiKey,
-          bearer_token: bearerToken,
-          redirect_uri: redirectUri,
-        },
+      const response = await integrationAuthApi.initiateAuth({
+        campaign_slug: campaignSlug,
+        api_key: apiKey,
+        bearer_token: bearerToken,
+        redirect_uri: redirectUri,
       });
 
       if (response.data.success) {
-        const token = response.data.stateToken;
+        const token = response.data.data.stateToken;
         setStateToken(token);
 
         // Carregar dados da sessão
@@ -98,16 +97,19 @@ function IntegrationAuthorizePageContent() {
 
   const loadSession = async (token: string) => {
     try {
-      const response = await api.get(`/api/integration/session/${token}`);
-      setSession(response.data);
+      const response = await integrationAuthApi.getSession(token);
 
-      // Determinar step atual baseado no status da sessão
-      if (response.data.status === 'telegram_auth_complete') {
-        setStep('select_group');
-      } else if (response.data.status === 'group_selected') {
-        setStep('select_min_support_level');
-      } else if (response.data.status === 'min_support_level_selected') {
-        setStep('complete');
+      if (response.data.success) {
+        setSession(response.data.data.session);
+
+        // Determinar step atual baseado no status da sessão
+        if (response.data.data.session.status === 'telegram_auth_complete') {
+          setStep('select_group');
+        } else if (response.data.data.session.status === 'group_selected') {
+          setStep('select_min_support_level');
+        } else if (response.data.data.session.status === 'min_support_level_selected') {
+          setStep('complete');
+        }
       }
     } catch (err) {
       console.error('Erro ao carregar sessão:', err);
@@ -116,10 +118,18 @@ function IntegrationAuthorizePageContent() {
 
   const loadCampaignData = async (campaignSlug: string) => {
     try {
-      const response = await api.get(`/api/campaigns/slug/${campaignSlug}`);
-      setCampaignData({
-        rewardLevels: response.data.campaign?.rewardLevels || [],
-      });
+      const response = await campaignApi.getBySlug(campaignSlug);
+
+      // Bug corrigido: response.data agora tem estrutura { success: true, data: ICampaign }
+      if (response.data.success) {
+        setCampaignData({
+          rewardLevels: response.data.data.rewardLevels || [],
+        });
+        setCampaignTitle(response.data.data.title || '');
+      } else {
+        console.error('Erro ao carregar campanha:', response.data.error);
+        setCampaignData({ rewardLevels: [] });
+      }
     } catch (err) {
       console.error('Erro ao carregar dados da campanha:', err);
       // Não bloqueia o fluxo se não conseguir carregar
@@ -133,10 +143,7 @@ function IntegrationAuthorizePageContent() {
 
       setLoading(true);
 
-      await api.post('/api/integration/telegram-auth', {
-        stateToken,
-        ...user,
-      });
+      await integrationAuthApi.telegramAuth(stateToken, user);
 
       // Recarregar sessão
       await loadSession(stateToken);
@@ -284,14 +291,14 @@ function IntegrationAuthorizePageContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="max-w-lg w-full p-8">
-        <div className="text-center mb-8">
+    <div className="bg-gray-50 py-8 p-4">
+      <Card className="max-w-lg w-full p-6 mx-auto">
+        <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
             Conectar Grupo Telegram
           </h1>
           <p className="text-gray-600">
-            Campanha: <span className="font-semibold">{session?.campaignSlug}</span>
+            Campanha: <span className="font-semibold">{campaignTitle || session?.campaignSlug}</span>
           </p>
         </div>
 
