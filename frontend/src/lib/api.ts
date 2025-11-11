@@ -241,6 +241,19 @@ export const integrationAuthApi = {
     }),
 
   /**
+   * POST /api/integration/select-min-support-level
+   * Seleciona nível mínimo de apoio
+   */
+  selectMinSupportLevel: (
+    stateToken: string,
+    minSupportLevel: string
+  ): Promise<AxiosResponse<SelectGroupResponse>> =>
+    axiosInstance.post('/api/integration/select-min-support-level', {
+      stateToken,
+      minSupportLevel,
+    }),
+
+  /**
    * POST /api/integration/complete
    * Finaliza integração
    */

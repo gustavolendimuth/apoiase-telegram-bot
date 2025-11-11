@@ -169,10 +169,7 @@ function IntegrationAuthorizePageContent() {
         return;
       }
 
-      await integrationAuthApi.post('/select-min-support-level', {
-        stateToken,
-        minSupportLevel: minLevelId,
-      });
+      await integrationAuthApi.selectMinSupportLevel(stateToken, minLevelId);
 
       // Recarregar sessão
       await loadSession(stateToken);
