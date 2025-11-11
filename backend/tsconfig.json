@@ -5,6 +5,11 @@
     "lib": ["ES2022"],
     "outDir": "./dist",
     "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "shared": ["../shared/index"],
+      "shared/*": ["../shared/*"]
+    },
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

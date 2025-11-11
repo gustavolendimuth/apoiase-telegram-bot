@@ -46,7 +46,9 @@ export default function CriarCampanhaPage() {
   ]);
 
   useEffect(() => {
+    console.log('[CriarCampanha] Auth state:', { user, authLoading });
     if (!authLoading && !user) {
+      console.log('[CriarCampanha] Not authenticated, redirecting to login');
       router.push("/login");
     }
   }, [user, authLoading, router]);

@@ -14,7 +14,11 @@ RUN npm install
 COPY backend ./backend
 COPY shared ./shared
 
-# Build da aplicação
+# Build do shared primeiro (necessário para imports do backend)
+WORKDIR /app
+RUN npm run build --workspace=shared
+
+# Build da aplicação backend
 WORKDIR /app/backend
 RUN npm run build
 
@@ -34,7 +38,8 @@ RUN npm install --omit=dev
 
 # Copiar build do estágio anterior
 COPY --from=builder /app/backend/dist ./backend/dist
-COPY --from=builder /app/shared ./shared
+COPY --from=builder /app/shared/dist ./shared/dist
+COPY --from=builder /app/shared/package.json ./shared/package.json
 
 # Criar diretório de logs
 RUN mkdir -p backend/logs

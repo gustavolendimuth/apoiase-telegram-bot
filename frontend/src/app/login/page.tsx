@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { getApiUrl } from '@/lib/env';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -31,41 +32,17 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `${getApiUrl()}/api/auth/login`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao fazer login');
-      }
-
-      // Save token
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      await login(formData.email, formData.password);
 
       // Show success message
       setSuccess('Login realizado com sucesso! Redirecionando...');
 
-      // Redirect after 1.5 seconds
+      // Redirect after 1 second
       setTimeout(() => {
         router.push('/');
-        // Force page reload to update Navbar
-        window.location.href = '/';
-      }, 1500);
+      }, 1000);
     } catch (err: any) {
-      setError(err.message || 'Erro ao fazer login');
+      setError(err.response?.data?.error || err.message || 'Erro ao fazer login');
     } finally {
       setLoading(false);
     }

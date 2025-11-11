@@ -14,7 +14,11 @@ RUN npm install
 COPY frontend ./frontend
 COPY shared ./shared
 
-# Build da aplicação
+# Build do shared primeiro (necessário para imports do frontend)
+WORKDIR /app
+RUN npm run build --workspace=shared
+
+# Build da aplicação frontend
 WORKDIR /app/frontend
 RUN npm run build
 
@@ -35,7 +39,8 @@ RUN npm install --omit=dev
 COPY --from=builder /app/frontend/.next ./frontend/.next
 COPY --from=builder /app/frontend/public ./frontend/public
 COPY --from=builder /app/frontend/next.config.js ./frontend/
-COPY --from=builder /app/shared ./shared
+COPY --from=builder /app/shared/dist ./shared/dist
+COPY --from=builder /app/shared/package.json ./shared/package.json
 
 # Expor porta
 EXPOSE 3000
