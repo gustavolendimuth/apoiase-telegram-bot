@@ -185,7 +185,7 @@ function IntegrationAuthorizePageContent() {
   const handleCancel = async () => {
     try {
       if (stateToken) {
-        await api.post('/api/integration/cancel', { stateToken });
+        await integrationAuthApi.cancel(stateToken);
       }
 
       // Tentar fechar a janela (funciona se foi aberta via window.open)
