@@ -66,8 +66,8 @@ export default function RegisterPage() {
       }
 
       // Save token
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('token', data.data.token);
+      localStorage.setItem('user', JSON.stringify(data.data.user));
 
       // Show success message
       setSuccess('Conta criada com sucesso! Redirecionando...');

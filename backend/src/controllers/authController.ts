@@ -30,9 +30,11 @@ export class AuthController {
       logger.info('Usuário autenticado com sucesso:', email);
 
       res.json({
-        message: 'Login realizado com sucesso',
-        user: result.user,
-        token: result.token,
+        success: true,
+        data: {
+          user: result.user,
+          token: result.token,
+        },
       });
     } catch (error) {
       logger.error('Erro ao fazer login:', error);
@@ -65,9 +67,11 @@ export class AuthController {
       logger.info('Token APOIA.se validado com sucesso:', email);
 
       res.json({
-        message: 'Token validado com sucesso',
-        user,
-        token,
+        success: true,
+        data: {
+          user,
+          token,
+        },
       });
     } catch (error) {
       logger.error('Erro ao validar token APOIA.se:', error);
@@ -87,7 +91,10 @@ export class AuthController {
       }
 
       res.json({
-        user: req.user,
+        success: true,
+        data: {
+          user: req.user,
+        },
       });
     } catch (error) {
       logger.error('Erro ao buscar informações do usuário:', error);
@@ -136,9 +143,12 @@ export class AuthController {
       logger.info('Usuário registrado com sucesso:', email);
 
       res.status(201).json({
-        message: 'Usuário registrado com sucesso',
-        user: result.user,
-        token: result.token,
+        success: true,
+        data: {
+          message: 'Usuário registrado com sucesso',
+          user: result.user,
+          token: result.token,
+        },
       });
     } catch (error) {
       logger.error('Erro ao registrar usuário:', error);
