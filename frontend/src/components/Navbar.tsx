@@ -76,8 +76,14 @@ export default function Navbar() {
                     Meus Apoios
                   </Link>
                   <button
-                    onClick={() => router.push('/minhas-campanhas')}
+                    onClick={() => router.push('/criar-campanha')}
                     className="hidden sm:block px-4 py-2 bg-[#ed5544] text-white rounded-md hover:bg-[#d64435] transition-colors font-semibold"
+                  >
+                    Criar Campanha
+                  </button>
+                  <button
+                    onClick={() => router.push('/minhas-campanhas')}
+                    className="hidden sm:block px-4 py-2 border border-[#ed5544] text-[#ed5544] rounded-md hover:bg-[#ed5544]/5 transition-colors font-semibold"
                   >
                     Minhas Campanhas
                   </button>
@@ -193,54 +199,65 @@ export default function Navbar() {
         <div className="md:hidden bg-white border-b border-gray-200 shadow-lg">
           <div className="px-4 py-4 space-y-4">
             <nav className="space-y-3">
-              <a
-                href="#"
+              <Link
+                href="/campanhas"
                 className="block text-gray-600 hover:text-gray-900 transition-colors font-medium py-2"
+                onClick={() => setIsMobileMenuOpen(false)}
               >
                 Descobrir
-              </a>
-              <a
-                href="#"
-                className="block text-gray-600 hover:text-gray-900 transition-colors font-medium py-2"
-              >
-                Como funciona
-              </a>
-              <a
-                href="#"
-                className="block text-gray-600 hover:text-gray-900 transition-colors font-medium py-2"
-              >
-                Recursos
-              </a>
-              <a
-                href="#"
-                className="block text-gray-600 hover:text-gray-900 transition-colors font-medium py-2"
-              >
-                Blog
-              </a>
+              </Link>
+              {user && (
+                <>
+                  <Link
+                    href="/meus-apoios"
+                    className="block text-gray-600 hover:text-gray-900 transition-colors font-medium py-2"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Meus Apoios
+                  </Link>
+                  <Link
+                    href="/minhas-campanhas"
+                    className="block text-gray-600 hover:text-gray-900 transition-colors font-medium py-2"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Minhas Campanhas
+                  </Link>
+                </>
+              )}
             </nav>
             <div className="pt-4 border-t border-gray-200 space-y-3">
-              <button className="w-full flex items-center justify-center gap-2 text-gray-600 hover:text-gray-900 transition-colors py-2">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              {user ? (
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    router.push('/criar-campanha');
+                  }}
+                  className="w-full px-4 py-2 bg-[#ed5544] text-white rounded-md hover:bg-[#d64435] transition-colors font-semibold"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-                <span>Buscar</span>
-              </button>
-              <button className="w-full px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors font-medium">
-                Entrar
-              </button>
-              <button className="w-full px-4 py-2 bg-[#ed5544] text-white rounded-md hover:bg-[#d64435] transition-colors font-semibold">
-                Criar campanha
-              </button>
+                  Criar Campanha
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      router.push('/login');
+                    }}
+                    className="w-full px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors font-medium border border-gray-300 rounded-md"
+                  >
+                    Entrar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      router.push('/register');
+                    }}
+                    className="w-full px-4 py-2 bg-[#ed5544] text-white rounded-md hover:bg-[#d64435] transition-colors font-semibold"
+                  >
+                    Criar conta
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getApiUrl } from '@/lib/env';
+import { useAuth } from "@/hooks/useAuth";
 
 interface Campaign {
   _id: string;
@@ -36,6 +37,7 @@ const categories = [
 
 export default function Home() {
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -59,7 +61,7 @@ export default function Home() {
 
       if (response.ok) {
         const data = await response.json();
-        setCampaigns(data.data.campaigns || []);
+        setCampaigns(data.campaigns || []);
       }
     } catch (error) {
       console.error('Error fetching campaigns:', error);
@@ -90,7 +92,7 @@ export default function Home() {
                 Descobrir projetos
               </button>
               <button
-                onClick={() => router.push('/login')}
+                onClick={() => router.push(isAuthenticated ? '/criar-campanha' : '/login')}
                 className="px-8 py-4 border-2 border-white text-white rounded-lg hover:bg-white/10 transition-colors font-semibold text-lg"
               >
                 Criar minha campanha
