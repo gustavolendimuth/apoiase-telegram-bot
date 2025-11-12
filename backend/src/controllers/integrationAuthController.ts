@@ -54,11 +54,9 @@ export class IntegrationAuthController {
       // Retornar state token e dados da campanha
       res.json({
         success: true,
-        data: {
-          stateToken: result.stateToken!,
-          campaign: result.campaign!,
-          redirectUrl: `/integration/authorize?state=${result.stateToken}`,
-        },
+        stateToken: result.stateToken!,
+        campaign: result.campaign!,
+        redirectUrl: `/integration/authorize?state=${result.stateToken}`,
       });
     } catch (error: any) {
       logger.error('Erro no controller de autorização', { error: error.message });
@@ -120,10 +118,8 @@ export class IntegrationAuthController {
 
       res.json({
         success: true,
-        data: {
-          message: 'Autenticação Telegram confirmada',
-          authenticated: true,
-        },
+        message: 'Autenticação Telegram confirmada',
+        authenticated: true,
       });
     } catch (error: any) {
       logger.error('Erro ao processar Telegram auth', { error: error.message });
@@ -179,15 +175,13 @@ export class IntegrationAuthController {
 
       res.json({
         success: true,
-        data: {
-          groups: groups.map(g => ({
-            id: g.id,
-            title: g.title,
-            type: g.type,
-            memberCount: g.memberCount ?? 0,
-            hasExistingMembers: g.memberCount !== undefined && g.memberCount > 1,
-          })),
-        },
+        groups: groups.map(g => ({
+          id: g.id,
+          title: g.title,
+          type: g.type,
+          memberCount: g.memberCount ?? 0,
+          hasExistingMembers: g.memberCount !== undefined && g.memberCount > 1,
+        })),
       });
     } catch (error: any) {
       logger.error('Erro ao listar grupos', { error: error.message });
@@ -233,10 +227,8 @@ export class IntegrationAuthController {
 
       res.json({
         success: true,
-        data: {
-          message: 'Grupo selecionado com sucesso',
-          warning: result.warning,
-        },
+        message: 'Grupo selecionado com sucesso',
+        warning: result.warning,
       });
     } catch (error: any) {
       logger.error('Erro ao selecionar grupo', { error: error.message });
@@ -281,9 +273,7 @@ export class IntegrationAuthController {
 
       res.json({
         success: true,
-        data: {
-          message: 'Nível mínimo de apoio selecionado com sucesso',
-        },
+        message: 'Nível mínimo de apoio selecionado com sucesso',
       });
     } catch (error: any) {
       logger.error('Erro ao selecionar nível mínimo de apoio', { error: error.message });
@@ -324,11 +314,9 @@ export class IntegrationAuthController {
 
       res.json({
         success: true,
-        data: {
-          integration: result.integration!,
-          integrationId: result.integrationId!,
-          message: 'Integração criada com sucesso!',
-        },
+        integration: result.integration!,
+        integrationId: result.integrationId!,
+        message: 'Integração criada com sucesso!',
       });
     } catch (error: any) {
       logger.error('Erro ao completar autorização', { error: error.message });
@@ -363,16 +351,14 @@ export class IntegrationAuthController {
       // Retornar apenas dados seguros (sem credenciais)
       res.json({
         success: true,
-        data: {
-          session: {
-            stateToken: session.stateToken,
-            status: session.status,
-            campaignSlug: session.campaignSlug,
-            telegramUserId: session.telegramUserId,
-            telegramUsername: session.telegramUsername,
-            telegramGroupId: session.selectedGroupId,
-            telegramGroupTitle: session.selectedGroupTitle,
-          },
+        session: {
+          stateToken: session.stateToken,
+          status: session.status,
+          campaignSlug: session.campaignSlug,
+          telegramUserId: session.telegramUserId,
+          telegramUsername: session.telegramUsername,
+          telegramGroupId: session.selectedGroupId,
+          telegramGroupTitle: session.selectedGroupTitle,
         },
       });
     } catch (error: any) {
@@ -407,9 +393,7 @@ export class IntegrationAuthController {
 
       res.json({
         success: true,
-        data: {
-          message: 'Autorização cancelada',
-        },
+        message: 'Autorização cancelada',
       });
     } catch (error: any) {
       logger.error('Erro ao cancelar autorização', { error: error.message });

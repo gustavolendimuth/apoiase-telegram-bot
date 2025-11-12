@@ -33,8 +33,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log('[useAuth] Fetching user...');
       const response = await authApi.getMe();
-      console.log('[useAuth] User fetched successfully:', response.data.data.user);
-      setUser(response.data.data.user);
+      console.log('[useAuth] User fetched successfully:', response.data.user);
+      setUser(response.data.user);
     } catch (error) {
       console.error('[useAuth] Error fetching user:', error);
       localStorage.removeItem('token');
@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     console.log('[useAuth] Attempting login...');
     const response = await authApi.login({ email, password });
-    const { token, user: userData } = response.data.data;
+    const { token, user: userData } = response.data;
 
     console.log('[useAuth] Login successful, saving token and user:', userData);
     localStorage.setItem('token', token);

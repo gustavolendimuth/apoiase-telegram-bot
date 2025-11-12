@@ -73,7 +73,7 @@ function IntegrationAuthorizePageContent() {
         redirect_uri: redirectUri,
       });
 
-      const token = response.data.data.stateToken;
+      const token = response.data.stateToken;
       setStateToken(token);
 
       // Carregar dados da sessão
@@ -96,14 +96,14 @@ function IntegrationAuthorizePageContent() {
       const response = await integrationAuthApi.getSession(token);
 
       if (response.data.success) {
-        setSession(response.data.data.session);
+        setSession(response.data.session);
 
         // Determinar step atual baseado no status da sessão
-        if (response.data.data.session.status === 'telegram_auth_complete') {
+        if (response.data.session.status === 'telegram_auth_complete') {
           setStep('select_group');
-        } else if (response.data.data.session.status === 'group_selected') {
+        } else if (response.data.session.status === 'group_selected') {
           setStep('select_min_support_level');
-        } else if (response.data.data.session.status === 'min_support_level_selected') {
+        } else if (response.data.session.status === 'min_support_level_selected') {
           setStep('complete');
         }
       }
@@ -116,11 +116,11 @@ function IntegrationAuthorizePageContent() {
     try {
       const response = await campaignApi.getBySlug(campaignSlug);
 
-      // Bug corrigido: response.data agora tem estrutura { success: true, data: ICampaign }
+      // Bug corrigido: response.data agora tem estrutura { success: true, rewardLevels, title, ... }
       setCampaignData({
-        rewardLevels: response.data.data.rewardLevels || [],
+        rewardLevels: response.data.rewardLevels || [],
       });
-      setCampaignTitle(response.data.data.title || '');
+      setCampaignTitle(response.data.title || '');
     } catch (err) {
       console.error('Erro ao carregar dados da campanha:', err);
       // Não bloqueia o fluxo se não conseguir carregar
@@ -405,7 +405,7 @@ function CompleteIntegration({
         setSuccess(true);
 
         // Construir callback URL
-        const integrationId = response.data.data.integrationId;
+        const integrationId = response.data.integrationId;
         const redirectUri = session?.redirectUri;
 
         if (redirectUri) {

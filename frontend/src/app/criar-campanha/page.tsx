@@ -206,7 +206,7 @@ export default function CriarCampanhaPage() {
       const response = await campaignApi.create(campaignData);
 
       // Redirect to campaign page
-      router.push(`/campanha/${response.data.data.campaign.slug}`);
+      router.push(`/campanha/${response.data.campaign.slug}`);
     } catch (err: any) {
       console.error("Error creating campaign:", err);
       setError(err.response?.data?.error || "Erro ao criar campanha");

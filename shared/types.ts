@@ -126,10 +126,7 @@ export interface TelegramChatMember {
 // ============================================================================
 
 // Base response types
-export interface ApiSuccessResponse<T> {
-  success: true;
-  data: T;
-}
+export type ApiSuccessResponse<T> = { success: true } & T;
 
 export interface ApiErrorResponse {
   success: false;
@@ -178,46 +175,46 @@ export interface ICampaign {
 }
 
 // GET /api/campaigns/slug/:slug
-export interface GetCampaignBySlugResponse extends ApiSuccessResponse<ICampaign> {}
+export type GetCampaignBySlugResponse = ApiSuccessResponse<ICampaign>;
 
 // GET /api/campaigns/:id
-export interface GetCampaignResponse extends ApiSuccessResponse<ICampaign> {}
+export type GetCampaignResponse = ApiSuccessResponse<ICampaign>;
 
 // GET /api/campaigns/all
-export interface ListCampaignsResponse extends ApiSuccessResponse<{
+export type ListCampaignsResponse = ApiSuccessResponse<{
   campaigns: ICampaign[];
   total: number;
   page: number;
   limit: number;
-}> {}
+}>;
 
 // GET /api/campaigns/search
-export interface SearchCampaignsResponse extends ApiSuccessResponse<{
+export type SearchCampaignsResponse = ApiSuccessResponse<{
   campaigns: ICampaign[];
   total: number;
-}> {}
+}>;
 
 // GET /api/campaigns/my/campaigns
-export interface MyCampaignsResponse extends ApiSuccessResponse<{
+export type MyCampaignsResponse = ApiSuccessResponse<{
   campaigns: ICampaign[];
-}> {}
+}>;
 
 // POST /api/campaigns
-export interface CreateCampaignResponse extends ApiSuccessResponse<{
+export type CreateCampaignResponse = ApiSuccessResponse<{
   campaign: ICampaign;
   message: string;
-}> {}
+}>;
 
 // PUT /api/campaigns/:id
-export interface UpdateCampaignResponse extends ApiSuccessResponse<{
+export type UpdateCampaignResponse = ApiSuccessResponse<{
   campaign: ICampaign;
   message: string;
-}> {}
+}>;
 
 // DELETE /api/campaigns/:id
-export interface DeleteCampaignResponse extends ApiSuccessResponse<{
+export type DeleteCampaignResponse = ApiSuccessResponse<{
   message: string;
-}> {}
+}>;
 
 // ============================================================================
 // Auth API Response Types
@@ -233,28 +230,28 @@ export interface IUser {
 }
 
 // POST /api/auth/register
-export interface RegisterResponse extends ApiSuccessResponse<{
+export type RegisterResponse = ApiSuccessResponse<{
   user: IUser;
   token: string;
   message: string;
-}> {}
+}>;
 
 // POST /api/auth/login
-export interface LoginResponse extends ApiSuccessResponse<{
+export type LoginResponse = ApiSuccessResponse<{
   user: IUser;
   token: string;
-}> {}
+}>;
 
 // GET /api/auth/me
-export interface GetMeResponse extends ApiSuccessResponse<{
+export type GetMeResponse = ApiSuccessResponse<{
   user: IUser;
-}> {}
+}>;
 
 // POST /api/auth/validate-apoiase
-export interface ValidateApoiaseResponse extends ApiSuccessResponse<{
+export type ValidateApoiaseResponse = ApiSuccessResponse<{
   user: IUser;
   token: string;
-}> {}
+}>;
 
 // ============================================================================
 // Support API Response Types
@@ -277,39 +274,39 @@ export interface ISupport {
 }
 
 // POST /api/supports
-export interface CreateSupportResponse extends ApiSuccessResponse<{
+export type CreateSupportResponse = ApiSuccessResponse<{
   support: ISupport;
   message: string;
-}> {}
+}>;
 
 // GET /api/supports/my/supports
-export interface MySupportsResponse extends ApiSuccessResponse<{
+export type MySupportsResponse = ApiSuccessResponse<{
   supports: ISupport[];
-}> {}
+}>;
 
 // GET /api/supports/campaign/:campaignId
-export interface CampaignSupportsResponse extends ApiSuccessResponse<{
+export type CampaignSupportsResponse = ApiSuccessResponse<{
   supports: ISupport[];
   total: number;
-}> {}
+}>;
 
 // POST /api/supports/:id/pause
-export interface PauseSupportResponse extends ApiSuccessResponse<{
+export type PauseSupportResponse = ApiSuccessResponse<{
   support: ISupport;
   message: string;
-}> {}
+}>;
 
 // POST /api/supports/:id/resume
-export interface ResumeSupportResponse extends ApiSuccessResponse<{
+export type ResumeSupportResponse = ApiSuccessResponse<{
   support: ISupport;
   message: string;
-}> {}
+}>;
 
 // POST /api/supports/:id/cancel
-export interface CancelSupportResponse extends ApiSuccessResponse<{
+export type CancelSupportResponse = ApiSuccessResponse<{
   support: ISupport;
   message: string;
-}> {}
+}>;
 
 // ============================================================================
 // Integration API Response Types
@@ -330,80 +327,80 @@ export interface IIntegration {
 }
 
 // POST /api/integrations
-export interface CreateIntegrationResponse extends ApiSuccessResponse<{
+export type CreateIntegrationResponse = ApiSuccessResponse<{
   integration: IIntegration;
   apiKey: string;
   message: string;
-}> {}
+}>;
 
 // GET /api/integrations
-export interface ListIntegrationsResponse extends ApiSuccessResponse<{
+export type ListIntegrationsResponse = ApiSuccessResponse<{
   integrations: IIntegration[];
-}> {}
+}>;
 
 // GET /api/integrations/telegram-link/:campaignId
-export interface GetTelegramLinkResponse extends ApiSuccessResponse<{
+export type GetTelegramLinkResponse = ApiSuccessResponse<{
   telegramLink: string;
   botUsername: string;
-}> {}
+}>;
 
 // GET /api/integrations/:id
-export interface GetIntegrationResponse extends ApiSuccessResponse<{
+export type GetIntegrationResponse = ApiSuccessResponse<{
   integration: IIntegration;
-}> {}
+}>;
 
 // PUT /api/integrations/:id
-export interface UpdateIntegrationResponse extends ApiSuccessResponse<{
+export type UpdateIntegrationResponse = ApiSuccessResponse<{
   integration: IIntegration;
   message: string;
-}> {}
+}>;
 
 // DELETE /api/integrations/:id
-export interface DeleteIntegrationResponse extends ApiSuccessResponse<{
+export type DeleteIntegrationResponse = ApiSuccessResponse<{
   message: string;
-}> {}
+}>;
 
 // POST /api/integrations/:id/activate
-export interface ActivateIntegrationResponse extends ApiSuccessResponse<{
+export type ActivateIntegrationResponse = ApiSuccessResponse<{
   integration: IIntegration;
   message: string;
-}> {}
+}>;
 
 // POST /api/integrations/:id/deactivate
-export interface DeactivateIntegrationResponse extends ApiSuccessResponse<{
+export type DeactivateIntegrationResponse = ApiSuccessResponse<{
   integration: IIntegration;
   message: string;
-}> {}
+}>;
 
 // POST /api/integrations/:id/regenerate-key
-export interface RegenerateKeyResponse extends ApiSuccessResponse<{
+export type RegenerateKeyResponse = ApiSuccessResponse<{
   integration: IIntegration;
   apiKey: string;
   message: string;
-}> {}
+}>;
 
 // ============================================================================
 // Integration Auth API Response Types (OAuth-like flow)
 // ============================================================================
 
 // GET /api/integration/authorize
-export interface InitiateAuthResponse extends ApiSuccessResponse<{
+export type InitiateAuthResponse = ApiSuccessResponse<{
   stateToken: string;
   campaign: {
     slug: string;
     title: string;
   };
   redirectUrl: string;
-}> {}
+}>;
 
 // POST /api/integration/telegram-auth
-export interface TelegramAuthResponse extends ApiSuccessResponse<{
+export type TelegramAuthResponse = ApiSuccessResponse<{
   message: string;
   authenticated: boolean;
-}> {}
+}>;
 
 // GET /api/integration/available-groups
-export interface ListGroupsResponse extends ApiSuccessResponse<{
+export type ListGroupsResponse = ApiSuccessResponse<{
   groups: Array<{
     id: string;
     title: string;
@@ -411,23 +408,23 @@ export interface ListGroupsResponse extends ApiSuccessResponse<{
     memberCount: number;
     hasExistingMembers: boolean;
   }>;
-}> {}
+}>;
 
 // POST /api/integration/select-group
-export interface SelectGroupResponse extends ApiSuccessResponse<{
+export type SelectGroupResponse = ApiSuccessResponse<{
   message: string;
   warning?: string;
-}> {}
+}>;
 
 // POST /api/integration/complete
-export interface CompleteIntegrationResponse extends ApiSuccessResponse<{
+export type CompleteIntegrationResponse = ApiSuccessResponse<{
   integration: IIntegration;
   integrationId: string;
   message: string;
-}> {}
+}>;
 
 // GET /api/integration/session/:stateToken
-export interface GetSessionResponse extends ApiSuccessResponse<{
+export type GetSessionResponse = ApiSuccessResponse<{
   session: {
     stateToken: string;
     status: string;
@@ -437,35 +434,35 @@ export interface GetSessionResponse extends ApiSuccessResponse<{
     telegramGroupId?: string;
     telegramGroupTitle?: string;
   };
-}> {}
+}>;
 
 // POST /api/integration/cancel
-export interface CancelAuthResponse extends ApiSuccessResponse<{
+export type CancelAuthResponse = ApiSuccessResponse<{
   message: string;
-}> {}
+}>;
 
 // ============================================================================
 // APOIA.se Integration Routes Response Types
 // ============================================================================
 
 // POST /api/campaigns/:campaignSlug/integrations/telegram
-export interface StartIntegrationResponse extends ApiSuccessResponse<{
+export type StartIntegrationResponse = ApiSuccessResponse<{
   redirectUrl: string;
   stateToken: string;
-}> {}
+}>;
 
 // GET /api/campaigns/:campaignSlug/integrations/telegram/callback
-export interface IntegrationCallbackResponse extends ApiSuccessResponse<{
+export type IntegrationCallbackResponse = ApiSuccessResponse<{
   integration?: IIntegration;
   message: string;
-}> {}
+}>;
 
 // GET /api/campaigns/:campaignSlug/integrations/telegram
-export interface ListCampaignIntegrationsResponse extends ApiSuccessResponse<{
+export type ListCampaignIntegrationsResponse = ApiSuccessResponse<{
   integrations: IIntegration[];
-}> {}
+}>;
 
 // DELETE /api/campaigns/:campaignSlug/integrations/telegram/:id
-export interface DeleteCampaignIntegrationResponse extends ApiSuccessResponse<{
+export type DeleteCampaignIntegrationResponse = ApiSuccessResponse<{
   message: string;
-}> {}
+}>;

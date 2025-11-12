@@ -66,7 +66,7 @@ export function TelegramGroupSelector({
       const response = await integrationAuthApi.listGroups(stateToken);
 
       if (response.data.success) {
-        setGroups(response.data.data.groups || []);
+        setGroups(response.data.groups || []);
       }
     } catch (err: any) {
       console.error('Erro ao carregar grupos:', err);
@@ -84,8 +84,8 @@ export function TelegramGroupSelector({
       const response = await integrationAuthApi.selectGroup(stateToken, groupId, groupTitle);
 
       // Mostrar warning se o grupo tiver membros existentes
-      if (response.data.data.warning) {
-        console.warn('Aviso do backend:', response.data.data.warning);
+      if (response.data.warning) {
+        console.warn('Aviso do backend:', response.data.warning);
         // O aviso já é mostrado visualmente no card do grupo
       }
 

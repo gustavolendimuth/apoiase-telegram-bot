@@ -37,10 +37,8 @@ export const createCampaign = async (
 
     res.status(201).json({
       success: true,
-      data: {
-        campaign: campaign as any,
-        message: 'Campanha criada com sucesso!',
-      },
+      campaign: campaign as any,
+      message: 'Campanha criada com sucesso!',
     });
   } catch (error: any) {
     logger.error('Error in createCampaign:', error);
@@ -77,7 +75,7 @@ export const getCampaign = async (
 
     res.json({
       success: true,
-      data: campaign as any,
+      ...(campaign as any),
     });
   } catch (error) {
     logger.error('Error in getCampaign:', error);
@@ -107,7 +105,7 @@ export const getCampaignBySlug = async (
 
     res.json({
       success: true,
-      data: campaign as any,
+      ...(campaign as any),
     });
   } catch (error) {
     logger.error('Error in getCampaignBySlug:', error);
@@ -138,9 +136,7 @@ export const getMyCampaigns = async (
 
     res.json({
       success: true,
-      data: {
-        campaigns: campaigns as any,
-      },
+      campaigns: campaigns as any,
     });
   } catch (error) {
     logger.error('Error in getMyCampaigns:', error);
@@ -173,12 +169,10 @@ export const getAllCampaigns = async (
 
     res.json({
       success: true,
-      data: {
-        campaigns: result.campaigns as any,
-        total: result.total,
-        page,
-        limit: filters.limit,
-      },
+      campaigns: result.campaigns as any,
+      total: result.total,
+      page,
+      limit: filters.limit,
     });
   } catch (error) {
     logger.error('Error in getAllCampaigns:', error);
@@ -219,10 +213,8 @@ export const updateCampaign = async (
 
     res.json({
       success: true,
-      data: {
-        campaign: campaign as any,
-        message: 'Campanha atualizada com sucesso!',
-      },
+      campaign: campaign as any,
+      message: 'Campanha atualizada com sucesso!',
     });
   } catch (error: any) {
     logger.error('Error in updateCampaign:', error);
@@ -261,9 +253,7 @@ export const deleteCampaign = async (
 
     res.json({
       success: true,
-      data: {
-        message: 'Campanha deletada com sucesso!',
-      },
+      message: 'Campanha deletada com sucesso!',
     });
   } catch (error: any) {
     logger.error('Error in deleteCampaign:', error);
@@ -304,10 +294,8 @@ export const searchCampaigns = async (
 
     res.json({
       success: true,
-      data: {
-        campaigns: campaigns as any,
-        total: campaigns.length,
-      },
+      campaigns: campaigns as any,
+      total: campaigns.length,
     });
   } catch (error) {
     logger.error('Error in searchCampaigns:', error);

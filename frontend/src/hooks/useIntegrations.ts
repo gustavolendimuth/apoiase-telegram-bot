@@ -20,7 +20,7 @@ export const useIntegrations = (campaignId?: string) => {
     try {
       setLoading(true);
       const response = await integrationApi.list(campaignId);
-      setIntegrations(response.data.data.integrations || []);
+      setIntegrations(response.data.integrations || []);
       setError(null);
     } catch (err: any) {
       const message = err.response?.data?.error || 'Erro ao carregar integrações';
@@ -42,7 +42,7 @@ export const useIntegrations = (campaignId?: string) => {
   }): Promise<IIntegration | null> => {
     try {
       const response = await integrationApi.create(data);
-      const newIntegration = response.data.data.integration;
+      const newIntegration = response.data.integration;
 
       setIntegrations((prev) => [newIntegration, ...prev]);
       showToast('success', 'Integração criada com sucesso!');

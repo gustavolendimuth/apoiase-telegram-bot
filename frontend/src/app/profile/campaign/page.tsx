@@ -58,7 +58,7 @@ function CampaignSettingsContent() {
     try {
       setLoadingCampaign(true);
       const response = await campaignApi.getById(campaignId);
-      const campaignData = response.data.data;
+      const campaignData = response.data;
       setCampaign(campaignData);
       setEditFormData({
         title: campaignData.title,
@@ -180,7 +180,7 @@ function CampaignSettingsContent() {
     try {
       setError('');
       const response = await campaignApi.update(campaignId, editFormData);
-      setCampaign(response.data.data.campaign);
+      setCampaign(response.data.campaign);
       // Show success message
       alert('Campanha atualizada com sucesso!');
     } catch (err: any) {

@@ -30,7 +30,7 @@ export default function MinhasCampanhasPage() {
     try {
       setLoading(true);
       const response = await campaignApi.getMyCampaigns();
-      setCampaigns(response.data.data.campaigns);
+      setCampaigns(response.data.campaigns);
     } catch (err: any) {
       console.error('Error fetching campaigns:', err);
       setError(err.response?.data?.error || 'Erro ao carregar campanhas');

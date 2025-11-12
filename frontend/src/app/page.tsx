@@ -59,7 +59,7 @@ export default function Home() {
 
       if (response.ok) {
         const data = await response.json();
-        setCampaigns(data.campaigns);
+        setCampaigns(data.data.campaigns || []);
       }
     } catch (error) {
       console.error('Error fetching campaigns:', error);

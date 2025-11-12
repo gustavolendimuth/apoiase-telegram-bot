@@ -47,7 +47,7 @@ export default function MeusApoios() {
     try {
       setLoading(true);
       const response = await supportApi.getMySupports();
-      const supportsData = response.data.data.supports as unknown as PopulatedSupport[];
+      const supportsData = response.data.supports as unknown as PopulatedSupport[];
 
       // Buscar informações de integração para cada apoio
       const supportsWithIntegration = await Promise.all(
