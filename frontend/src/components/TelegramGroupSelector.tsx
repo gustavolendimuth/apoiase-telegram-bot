@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
 import { Loading } from './ui/Loading';
-import api from '@/lib/api';
+import { botApi, integrationApi, integrationAuthApi } from '@/lib/api';
 
 interface TelegramGroupSelectorProps {
   stateToken: string;
@@ -39,7 +39,7 @@ export function TelegramGroupSelector({
 
   const loadBotInfo = async () => {
     try {
-      const response = await api.get('/api/bot/info');
+      const response = await botApi.getInfo();
       if (response.data.botUsername) {
         setBotUsername(response.data.botUsername);
       }
@@ -49,7 +49,7 @@ export function TelegramGroupSelector({
 
     // Buscar URL para adicionar bot
     try {
-      const urlResponse = await api.get('/api/integrations/add-bot-url');
+      const urlResponse = await integrationApi.getAddBotUrl();
       if (urlResponse.data.addBotUrl) {
         setAddBotUrl(urlResponse.data.addBotUrl);
       }
@@ -63,12 +63,10 @@ export function TelegramGroupSelector({
       setLoading(true);
       setError(null);
 
-      const response = await api.get('/api/integration/available-groups', {
-        params: { stateToken },
-      });
+      const response = await integrationAuthApi.listGroups(stateToken);
 
       if (response.data.success) {
-        setGroups(response.data.groups || []);
+        setGroups(response.data.data.groups || []);
       }
     } catch (err: any) {
       console.error('Erro ao carregar grupos:', err);
@@ -83,15 +81,11 @@ export function TelegramGroupSelector({
       setLoading(true);
       setError(null);
 
-      const response = await api.post('/api/integration/select-group', {
-        stateToken,
-        groupId,
-        groupTitle,
-      });
+      const response = await integrationAuthApi.selectGroup(stateToken, groupId, groupTitle);
 
       // Mostrar warning se o grupo tiver membros existentes
-      if (response.data.warning) {
-        console.warn('Aviso do backend:', response.data.warning);
+      if (response.data.data.warning) {
+        console.warn('Aviso do backend:', response.data.data.warning);
         // O aviso já é mostrado visualmente no card do grupo
       }
 

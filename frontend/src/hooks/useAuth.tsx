@@ -1,16 +1,11 @@
 'use client';
 
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { api } from '@/lib/api';
-
-interface User {
-  id: string;
-  email: string;
-  role: 'maker' | 'supporter' | 'admin';
-}
+import { authApi } from '@/lib/api';
+import type { IUser } from 'shared';
 
 interface AuthContextType {
-  user: User | null;
+  user: IUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -20,7 +15,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<IUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,9 +32,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUser = async () => {
     try {
       console.log('[useAuth] Fetching user...');
-      const response = await api.get('/api/auth/me');
-      console.log('[useAuth] User fetched successfully:', response.data.user);
-      setUser(response.data.user);
+      const response = await authApi.getMe();
+      console.log('[useAuth] User fetched successfully:', response.data.data.user);
+      setUser(response.data.data.user);
     } catch (error) {
       console.error('[useAuth] Error fetching user:', error);
       localStorage.removeItem('token');
@@ -51,8 +46,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     console.log('[useAuth] Attempting login...');
-    const response = await api.post('/api/auth/login', { email, password });
-    const { token, user: userData } = response.data;
+    const response = await authApi.login({ email, password });
+    const { token, user: userData } = response.data.data;
 
     console.log('[useAuth] Login successful, saving token and user:', userData);
     localStorage.setItem('token', token);

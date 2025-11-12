@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { campaignApi, integrationAuthApi } from '@/lib/api';
+import { campaignApi, integrationAuthApi, botApi } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Loading } from '@/components/ui/Loading';
@@ -28,8 +28,8 @@ interface SessionData {
   selectedGroupId?: string;
   selectedGroupTitle?: string;
   selectedMinSupportLevel?: string;
-  expiresAt: string;
-  isValid: boolean;
+  expiresAt?: string;
+  isValid?: boolean;
   redirectUri?: string;
 }
 
@@ -73,20 +73,16 @@ function IntegrationAuthorizePageContent() {
         redirect_uri: redirectUri,
       });
 
-      if (response.data.success) {
-        const token = response.data.data.stateToken;
-        setStateToken(token);
+      const token = response.data.data.stateToken;
+      setStateToken(token);
 
-        // Carregar dados da sessão
-        await loadSession(token);
+      // Carregar dados da sessão
+      await loadSession(token);
 
-        // Carregar dados da campanha (incluindo níveis de apoio)
-        await loadCampaignData(campaignSlug);
+      // Carregar dados da campanha (incluindo níveis de apoio)
+      await loadCampaignData(campaignSlug);
 
-        setStep('telegram_auth');
-      } else {
-        setError(response.data.error || 'Erro ao iniciar autorização');
-      }
+      setStep('telegram_auth');
     } catch (err: any) {
       console.error('Erro ao inicializar autorização:', err);
       setError(err.response?.data?.error || 'Erro ao iniciar autorização');
@@ -121,15 +117,10 @@ function IntegrationAuthorizePageContent() {
       const response = await campaignApi.getBySlug(campaignSlug);
 
       // Bug corrigido: response.data agora tem estrutura { success: true, data: ICampaign }
-      if (response.data.success) {
-        setCampaignData({
-          rewardLevels: response.data.data.rewardLevels || [],
-        });
-        setCampaignTitle(response.data.data.title || '');
-      } else {
-        console.error('Erro ao carregar campanha:', response.data.error);
-        setCampaignData({ rewardLevels: [] });
-      }
+      setCampaignData({
+        rewardLevels: response.data.data.rewardLevels || [],
+      });
+      setCampaignTitle(response.data.data.title || '');
     } catch (err) {
       console.error('Erro ao carregar dados da campanha:', err);
       // Não bloqueia o fluxo se não conseguir carregar
@@ -225,7 +216,7 @@ function IntegrationAuthorizePageContent() {
         // Se não estiver configurado na variável de ambiente, tentar buscar do backend
         if (!botUsername) {
           try {
-            const response = await api.get('/api/bot/info');
+            const response = await botApi.getInfo();
             if (response.data.botUsername) {
               botUsername = response.data.botUsername;
             }
@@ -408,15 +399,13 @@ function CompleteIntegration({
       setLoading(true);
       setError(null);
 
-      const response = await api.post('/api/integration/complete', {
-        stateToken,
-      });
+      const response = await integrationAuthApi.complete(stateToken);
 
       if (response.data.success) {
         setSuccess(true);
 
         // Construir callback URL
-        const integrationId = response.data.integrationId;
+        const integrationId = response.data.data.integrationId;
         const redirectUri = session?.redirectUri;
 
         if (redirectUri) {

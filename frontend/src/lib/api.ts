@@ -36,7 +36,7 @@ import type {
   // Base types
   ICampaign,
   ISupport,
-} from '@shared/types';
+} from 'shared';
 
 const API_URL = getApiUrl();
 
@@ -148,6 +148,13 @@ export const campaignApi = {
    */
   delete: (id: string): Promise<AxiosResponse<DeleteCampaignResponse>> =>
     axiosInstance.delete(`/api/campaigns/${id}`),
+
+  /**
+   * POST /api/campaigns/:slug/integrations/telegram
+   * Cria integração Telegram para campanha
+   */
+  createTelegramIntegration: (slug: string): Promise<AxiosResponse<any>> =>
+    axiosInstance.post(`/api/campaigns/${slug}/integrations/telegram`),
 };
 
 // ============================================================================
@@ -257,13 +264,9 @@ export const integrationAuthApi = {
    * POST /api/integration/complete
    * Finaliza integração
    */
-  complete: (
-    stateToken: string,
-    supportLevels: string[]
-  ): Promise<AxiosResponse<CompleteIntegrationResponse>> =>
+  complete: (stateToken: string): Promise<AxiosResponse<CompleteIntegrationResponse>> =>
     axiosInstance.post('/api/integration/complete', {
       stateToken,
-      supportLevels,
     }),
 
   /**
@@ -290,8 +293,10 @@ export const integrationApi = {
    * GET /api/integrations
    * Lista integrações do usuário
    */
-  list: (): Promise<AxiosResponse<ListIntegrationsResponse>> =>
-    axiosInstance.get('/api/integrations'),
+  list: (campaignId?: string): Promise<AxiosResponse<ListIntegrationsResponse>> =>
+    axiosInstance.get('/api/integrations', {
+      params: campaignId ? { campaignId } : {},
+    }),
 
   /**
    * GET /api/integrations/:id
@@ -308,10 +313,72 @@ export const integrationApi = {
     axiosInstance.post('/api/integrations', data),
 
   /**
+   * PUT /api/integrations/:id
+   * Atualiza integração
+   */
+  update: (id: string, data: any): Promise<AxiosResponse<any>> =>
+    axiosInstance.put(`/api/integrations/${id}`, data),
+
+  /**
    * DELETE /api/integrations/:id
    * Deleta integração
    */
   delete: (id: string) => axiosInstance.delete(`/api/integrations/${id}`),
+
+  /**
+   * POST /api/integrations/:id/activate
+   * Ativa integração
+   */
+  activate: (id: string): Promise<AxiosResponse<any>> =>
+    axiosInstance.post(`/api/integrations/${id}/activate`),
+
+  /**
+   * POST /api/integrations/:id/deactivate
+   * Desativa integração
+   */
+  deactivate: (id: string): Promise<AxiosResponse<any>> =>
+    axiosInstance.post(`/api/integrations/${id}/deactivate`),
+
+  /**
+   * POST /api/integrations/:id/regenerate-key
+   * Regenera API key da integração
+   */
+  regenerateKey: (id: string): Promise<AxiosResponse<any>> =>
+    axiosInstance.post(`/api/integrations/${id}/regenerate-key`),
+
+  /**
+   * GET /api/integrations/add-bot-url
+   * Obtém URL para adicionar bot ao grupo
+   */
+  getAddBotUrl: (): Promise<AxiosResponse<any>> =>
+    axiosInstance.get('/api/integrations/add-bot-url'),
+
+  /**
+   * GET /api/integrations/telegram-link/:campaignId
+   * Obtém link do Telegram para uma campanha
+   */
+  getTelegramLink: (campaignId: string): Promise<AxiosResponse<any>> =>
+    axiosInstance.get(`/api/integrations/telegram-link/${campaignId}`),
+
+  /**
+   * GET /api/integrations/supporter/:campaignId
+   * Obtém informações de integração para um apoiador
+   */
+  getIntegrationForSupporter: (campaignId: string): Promise<AxiosResponse<any>> =>
+    axiosInstance.get(`/api/integrations/supporter/${campaignId}`),
+};
+
+// ============================================================================
+// Bot API
+// ============================================================================
+
+export const botApi = {
+  /**
+   * GET /api/bot/info
+   * Obtém informações do bot (username, etc)
+   */
+  getInfo: (): Promise<AxiosResponse<any>> =>
+    axiosInstance.get('/api/bot/info'),
 };
 
 // ============================================================================

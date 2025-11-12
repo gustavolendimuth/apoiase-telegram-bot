@@ -614,3 +614,4 @@ Critical indexes for performance:
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development commands, Docker modes, workflows, and troubleshooting
 - **[DEPLOY.md](DEPLOY.md)** - Deploy guide (Railway), database seed, backup/restore, and production setup
 - **[CLAUDE.md](CLAUDE.md)** - This file (project instructions for Claude Code AI)
+- Sempre use o axios para fazer chamadas a api, no lugar de fazer chamadas diretas

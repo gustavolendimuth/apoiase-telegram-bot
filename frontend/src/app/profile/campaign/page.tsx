@@ -4,32 +4,8 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useIntegrations } from "@/hooks/useIntegrations";
 import { Button, Badge, Modal } from "@/components/ui";
-import api from "@/lib/api";
-
-interface Campaign {
-  _id: string;
-  title: string;
-  slug: string;
-  description: string;
-  goal: number;
-  raised: number;
-  currency: string;
-  category: string;
-  imageUrl: string;
-  supporters: number;
-  status: 'draft' | 'active' | 'paused' | 'completed';
-  rewardLevels: RewardLevel[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface RewardLevel {
-  id: string;
-  title: string;
-  amount: number;
-  description: string;
-  benefits: string[];
-}
+import { campaignApi, integrationApi } from "@/lib/api";
+import type { ICampaign } from 'shared';
 
 type TabType = 'configuracao' | 'identificacao' | 'descricao' | 'metas' | 'recompensas' | 'integracoes' | 'publicacao';
 
@@ -40,7 +16,7 @@ function CampaignSettingsContent() {
 
   const [activeTab, setActiveTab] = useState<TabType>('configuracao');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [campaign, setCampaign] = useState<ICampaign | null>(null);
   const [loadingCampaign, setLoadingCampaign] = useState(true);
   const [error, setError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
@@ -81,15 +57,16 @@ function CampaignSettingsContent() {
 
     try {
       setLoadingCampaign(true);
-      const response = await api.get(`/api/campaigns/${campaignId}`);
-      setCampaign(response.data);
+      const response = await campaignApi.getById(campaignId);
+      const campaignData = response.data.data;
+      setCampaign(campaignData);
       setEditFormData({
-        title: response.data.title,
-        description: response.data.description,
-        category: response.data.category,
-        goal: response.data.goal,
-        currency: response.data.currency,
-        imageUrl: response.data.imageUrl,
+        title: campaignData.title,
+        description: campaignData.description,
+        category: campaignData.category,
+        goal: campaignData.goal,
+        currency: campaignData.currency,
+        imageUrl: campaignData.imageUrl || '',
       });
       setError('');
     } catch (err: any) {
@@ -111,7 +88,7 @@ function CampaignSettingsContent() {
       setError('');
 
       // Chamar endpoint que gera credenciais temporárias e retorna URL de redirecionamento
-      const response = await api.post(`/api/campaigns/${campaign.slug}/integrations/telegram`);
+      const response = await campaignApi.createTelegramIntegration(campaign.slug);
 
       if (response.data.success && response.data.redirectUrl) {
         // Redirecionar para a URL que contém todos os parâmetros necessários
@@ -150,7 +127,7 @@ function CampaignSettingsContent() {
   };
 
   const handleStartEdit = (integration: any) => {
-    setEditingIntegration(integration.id);
+    setEditingIntegration(integration._id);
     setEditMode(integration.accessMode || 'min_amount');
     setEditMinAmount(integration.minAmount || 0);
     setEditRewardLevels(integration.rewardLevels || []);
@@ -177,7 +154,7 @@ function CampaignSettingsContent() {
         updates.minAmount = undefined;
       }
 
-      await api.put(`/api/integrations/${integrationId}`, updates);
+      await integrationApi.update(integrationId, updates);
 
       // Reload integrations
       window.location.reload();
@@ -202,8 +179,8 @@ function CampaignSettingsContent() {
 
     try {
       setError('');
-      const response = await api.put(`/api/campaigns/${campaignId}`, editFormData);
-      setCampaign(response.data);
+      const response = await campaignApi.update(campaignId, editFormData);
+      setCampaign(response.data.data.campaign);
       // Show success message
       alert('Campanha atualizada com sucesso!');
     } catch (err: any) {
@@ -217,7 +194,7 @@ function CampaignSettingsContent() {
 
     try {
       setIsDeleting(true);
-      await api.delete(`/api/campaigns/${campaignId}`);
+      await campaignApi.delete(campaignId);
       // Redirect to campaigns list
       router.push('/minhas-campanhas');
     } catch (err: any) {
@@ -640,7 +617,7 @@ function CampaignSettingsContent() {
                     <div className="space-y-4">
                       {integrations.map((integration) => (
                         <div
-                          key={integration.id}
+                          key={integration._id}
                           className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden"
                         >
                           {/* Integration Header */}
@@ -664,7 +641,7 @@ function CampaignSettingsContent() {
                               <Badge variant={integration.isActive ? "success" : "default"}>
                                 {integration.isActive ? "Ativo" : "Inativo"}
                               </Badge>
-                              {editingIntegration !== integration.id && (
+                              {editingIntegration !== integration._id && (
                                 <>
                                   <button
                                     onClick={() => handleStartEdit(integration)}
@@ -673,11 +650,11 @@ function CampaignSettingsContent() {
                                     Editar
                                   </button>
                                   <button
-                                    onClick={() => handleDisconnectTelegram(integration.id)}
-                                    disabled={disconnectingIntegrationId === integration.id}
+                                    onClick={() => handleDisconnectTelegram(integration._id)}
+                                    disabled={disconnectingIntegrationId === integration._id}
                                     className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
-                                    {disconnectingIntegrationId === integration.id ? 'Desconectando...' : 'Desconectar'}
+                                    {disconnectingIntegrationId === integration._id ? 'Desconectando...' : 'Desconectar'}
                                   </button>
                                 </>
                               )}
@@ -685,7 +662,7 @@ function CampaignSettingsContent() {
                           </div>
 
                           {/* Edit Mode */}
-                          {editingIntegration === integration.id ? (
+                          {editingIntegration === integration._id ? (
                             <div className="border-t border-gray-200 bg-white p-4 space-y-4">
                               <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -771,7 +748,7 @@ function CampaignSettingsContent() {
                                   Cancelar
                                 </button>
                                 <button
-                                  onClick={() => handleSaveEdit(integration.id)}
+                                  onClick={() => handleSaveEdit(integration._id)}
                                   className="flex-1 px-4 py-2 bg-[#ed5544] hover:bg-[#d64435] text-white rounded font-medium text-sm transition-colors disabled:opacity-50"
                                   disabled={savingIntegration}
                                 >
@@ -786,22 +763,27 @@ function CampaignSettingsContent() {
                                 <div>
                                   <span className="font-medium text-gray-700">Controle de Acesso:</span>
                                   <p className="text-gray-900">
-                                    {integration.minSupportLevel
+                                    {integration.supportLevels
                                       ? 'Nível Mínimo Configurado'
                                       : 'Todos os Apoiadores'}
                                   </p>
                                 </div>
-                                {integration.minSupportLevel && (
+                                {integration.supportLevels && integration.supportLevels.length > 0 && (
                                   <div className="col-span-2">
-                                    <span className="font-medium text-gray-700">Nível Mínimo de Apoio:</span>
+                                    <span className="font-medium text-gray-700">Níveis de Apoio Aceitos:</span>
                                     {(() => {
-                                      const level = campaign?.rewardLevels.find((l) => l.id === integration.minSupportLevel);
-                                      return level ? (
+                                      const matchingLevels = campaign?.rewardLevels.filter((l) =>
+                                        integration.supportLevels.includes(l.id)
+                                      );
+                                      const minLevel = matchingLevels?.reduce((min, level) =>
+                                        level.amount < min.amount ? level : min
+                                      );
+                                      return minLevel ? (
                                         <p className="text-gray-900 mt-1">
-                                          {level.title} (R$ {level.amount.toFixed(2)}) e superiores
+                                          A partir de {minLevel.title} (R$ {minLevel.amount.toFixed(2)})
                                         </p>
                                       ) : (
-                                        <p className="text-gray-900 mt-1">{integration.minSupportLevel}</p>
+                                        <p className="text-gray-900 mt-1">Níveis configurados: {integration.supportLevels.join(', ')}</p>
                                       );
                                     })()}
                                   </div>

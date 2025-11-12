@@ -1,24 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { api } from '@/lib/api';
+import { integrationApi } from '@/lib/api';
 import { useToast } from '@/components/ui';
-
-interface Integration {
-  id: string;
-  campaignId: string;
-  telegramGroupId: string;
-  telegramGroupTitle: string;
-  telegramGroupType: 'group' | 'supergroup' | 'channel';
-  apiKey?: string;
-  minSupportLevel?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { IIntegration } from 'shared';
 
 export const useIntegrations = (campaignId?: string) => {
-  const [integrations, setIntegrations] = useState<Integration[]>([]);
+  const [integrations, setIntegrations] = useState<IIntegration[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { showToast } = useToast();
@@ -31,8 +19,8 @@ export const useIntegrations = (campaignId?: string) => {
 
     try {
       setLoading(true);
-      const response = await api.get(`/api/integrations?campaignId=${campaignId}`);
-      setIntegrations(response.data.integrations || []);
+      const response = await integrationApi.list(campaignId);
+      setIntegrations(response.data.data.integrations || []);
       setError(null);
     } catch (err: any) {
       const message = err.response?.data?.error || 'Erro ao carregar integrações';
@@ -51,10 +39,10 @@ export const useIntegrations = (campaignId?: string) => {
     campaignId: string;
     telegramGroupId: string;
     minSupportLevel?: string;
-  }): Promise<Integration | null> => {
+  }): Promise<IIntegration | null> => {
     try {
-      const response = await api.post('/api/integrations', data);
-      const newIntegration = response.data.integration;
+      const response = await integrationApi.create(data);
+      const newIntegration = response.data.data.integration;
 
       setIntegrations((prev) => [newIntegration, ...prev]);
       showToast('success', 'Integração criada com sucesso!');
@@ -72,11 +60,11 @@ export const useIntegrations = (campaignId?: string) => {
     data: { minSupportLevel?: string; isActive?: boolean }
   ): Promise<boolean> => {
     try {
-      const response = await api.put(`/api/integrations/${id}`, data);
+      const response = await integrationApi.update(id, data);
       const updated = response.data.integration;
 
       setIntegrations((prev) =>
-        prev.map((int) => (int.id === id ? { ...int, ...updated } : int))
+        prev.map((int) => (int._id === id ? { ...int, ...updated } : int))
       );
 
       showToast('success', 'Integração atualizada com sucesso!');
@@ -90,9 +78,9 @@ export const useIntegrations = (campaignId?: string) => {
 
   const deleteIntegration = async (id: string): Promise<boolean> => {
     try {
-      await api.delete(`/api/integrations/${id}`);
+      await integrationApi.delete(id);
 
-      setIntegrations((prev) => prev.filter((int) => int.id !== id));
+      setIntegrations((prev) => prev.filter((int) => int._id !== id));
       showToast('success', 'Integração deletada com sucesso!');
 
       return true;
@@ -105,11 +93,14 @@ export const useIntegrations = (campaignId?: string) => {
 
   const toggleIntegration = async (id: string, isActive: boolean): Promise<boolean> => {
     try {
-      const endpoint = isActive ? 'activate' : 'deactivate';
-      await api.post(`/api/integrations/${id}/${endpoint}`);
+      if (isActive) {
+        await integrationApi.activate(id);
+      } else {
+        await integrationApi.deactivate(id);
+      }
 
       setIntegrations((prev) =>
-        prev.map((int) => (int.id === id ? { ...int, isActive } : int))
+        prev.map((int) => (int._id === id ? { ...int, isActive } : int))
       );
 
       showToast(
@@ -127,11 +118,11 @@ export const useIntegrations = (campaignId?: string) => {
 
   const regenerateApiKey = async (id: string): Promise<string | null> => {
     try {
-      const response = await api.post(`/api/integrations/${id}/regenerate-key`);
+      const response = await integrationApi.regenerateKey(id);
       const newApiKey = response.data.apiKey;
 
       setIntegrations((prev) =>
-        prev.map((int) => (int.id === id ? { ...int, apiKey: newApiKey } : int))
+        prev.map((int) => (int._id === id ? { ...int, apiKey: newApiKey } : int))
       );
 
       showToast('success', 'API Key regenerada com sucesso!');

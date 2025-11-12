@@ -3,16 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import api from "@/lib/api";
-
-interface Campaign {
-  _id: string;
-  title: string;
-  slug: string;
-  imageUrl: string;
-  status: string;
-  category: string;
-}
+import { supportApi, integrationApi } from "@/lib/api";
+import type { ISupport, ICampaign } from 'shared';
 
 interface TelegramIntegration {
   hasIntegration: boolean;
@@ -21,24 +13,22 @@ interface TelegramIntegration {
   isMember?: boolean;
 }
 
-interface Support {
-  _id: string;
-  campaignId: Campaign;
-  rewardLevelId: string;
-  amount: number;
-  status: 'active' | 'cancelled' | 'paused' | 'payment_failed';
+// Support com campaignId populado e dates serializadas como strings (vindas da API)
+type PopulatedSupport = Omit<ISupport, 'campaignId' | 'lastPaymentDate' | 'nextPaymentDate' | 'cancelledAt' | 'pausedAt' | 'createdAt' | 'updatedAt'> & {
+  campaignId: ICampaign;
   lastPaymentDate?: string;
   nextPaymentDate?: string;
-  startDate: string;
   cancelledAt?: string;
+  pausedAt?: string;
   createdAt: string;
+  updatedAt: string;
   telegramIntegration?: TelegramIntegration;
-}
+};
 
 export default function MeusApoios() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const [supports, setSupports] = useState<Support[]>([]);
+  const [supports, setSupports] = useState<PopulatedSupport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -56,15 +46,15 @@ export default function MeusApoios() {
   const fetchMySupports = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/supports/my/supports');
-      const supportsData: Support[] = response.data;
+      const response = await supportApi.getMySupports();
+      const supportsData = response.data.data.supports as unknown as PopulatedSupport[];
 
       // Buscar informações de integração para cada apoio
       const supportsWithIntegration = await Promise.all(
         supportsData.map(async (support) => {
           try {
-            const integrationResponse = await api.get(
-              `/api/integrations/supporter/${support.campaignId._id}`
+            const integrationResponse = await integrationApi.getIntegrationForSupporter(
+              support.campaignId._id
             );
             return {
               ...support,
@@ -91,7 +81,7 @@ export default function MeusApoios() {
 
   const handlePauseSupport = async (supportId: string) => {
     try {
-      await api.post(`/api/supports/${supportId}/pause`);
+      await supportApi.pause(supportId);
       fetchMySupports(); // Refresh list
     } catch (err: any) {
       console.error('Error pausing support:', err);
@@ -101,7 +91,7 @@ export default function MeusApoios() {
 
   const handleResumeSupport = async (supportId: string) => {
     try {
-      await api.post(`/api/supports/${supportId}/resume`);
+      await supportApi.resume(supportId);
       fetchMySupports(); // Refresh list
     } catch (err: any) {
       console.error('Error resuming support:', err);
@@ -114,7 +104,7 @@ export default function MeusApoios() {
     if (!confirmed) return;
 
     try {
-      await api.post(`/api/supports/${supportId}/cancel`);
+      await supportApi.cancel(supportId);
       fetchMySupports(); // Refresh list
     } catch (err: any) {
       console.error('Error cancelling support:', err);
@@ -288,7 +278,7 @@ export default function MeusApoios() {
 
 // Support Card Component
 interface SupportCardProps {
-  support: Support;
+  support: PopulatedSupport;
   getStatusLabel: (status: string) => string;
   getStatusColor: (status: string) => string;
   formatDate: (dateString?: string) => string;
@@ -332,7 +322,7 @@ function SupportCard({ support, getStatusLabel, getStatusColor, formatDate, onPa
               <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span className="text-gray-600">Desde {formatDate(support.startDate)}</span>
+              <span className="text-gray-600">Desde {formatDate(support.createdAt)}</span>
             </div>
             {support.nextPaymentDate && support.status === 'active' && (
               <div className="flex items-center gap-2">

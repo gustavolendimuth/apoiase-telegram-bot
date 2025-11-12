@@ -5,28 +5,13 @@ import Link from "next/link";
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import api from '@/lib/api';
-
-interface Campaign {
-  _id: string;
-  title: string;
-  slug: string;
-  description: string;
-  goal: number;
-  raised: number;
-  currency: string;
-  category: string;
-  imageUrl: string;
-  supporters: number;
-  status: 'draft' | 'active' | 'paused' | 'completed';
-  createdAt: string;
-  updatedAt: string;
-}
+import { campaignApi } from '@/lib/api';
+import type { ICampaign } from 'shared';
 
 export default function MinhasCampanhasPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [campaigns, setCampaigns] = useState<ICampaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -44,8 +29,8 @@ export default function MinhasCampanhasPage() {
   const fetchMyCampaigns = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/campaigns/my/campaigns');
-      setCampaigns(response.data);
+      const response = await campaignApi.getMyCampaigns();
+      setCampaigns(response.data.data.campaigns);
     } catch (err: any) {
       console.error('Error fetching campaigns:', err);
       setError(err.response?.data?.error || 'Erro ao carregar campanhas');
@@ -204,7 +189,7 @@ export default function MinhasCampanhasPage() {
 
 // Campaign Card Component
 interface CampaignCardProps {
-  campaign: Campaign;
+  campaign: ICampaign;
   getStatusLabel: (status: string) => string;
   getStatusColor: (status: string) => string;
 }
