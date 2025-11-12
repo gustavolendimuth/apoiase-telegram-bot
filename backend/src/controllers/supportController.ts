@@ -12,7 +12,7 @@ export const getMySupports = async (req: AuthenticatedRequest, res: Response) =>
     }
 
     const supports = await supportService.getSupportsByUser(userId);
-    res.json(supports);
+    res.json({ supports });
   } catch (error) {
     logger.error('Error in getMySupports:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -30,7 +30,7 @@ export const getCampaignSupports = async (req: AuthenticatedRequest, res: Respon
 
     // TODO: Verify user owns the campaign before showing supports
     const supports = await supportService.getSupportsByCampaign(campaignId);
-    res.json(supports);
+    res.json({ supports });
   } catch (error) {
     logger.error('Error in getCampaignSupports:', error);
     res.status(500).json({ error: 'Internal server error' });
