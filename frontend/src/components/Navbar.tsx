@@ -58,32 +58,36 @@ export default function Navbar() {
 
             {/* Right side */}
             <div className="flex items-center gap-4">
-              {/* Navigation */}
-              <nav className="hidden md:flex gap-6">
+              {/* Navigation - Desktop */}
+              <nav className="hidden md:flex items-center gap-6">
                 <Link
                   href="/campanhas"
                   className="text-gray-600 hover:text-gray-900 transition-colors font-medium text-sm"
                 >
                   Descobrir
                 </Link>
-              </nav>
-              {user ? (
-                <>
+                {user && (
                   <Link
                     href="/meus-apoios"
                     className="text-gray-600 hover:text-gray-900 transition-colors font-medium text-sm"
                   >
                     Meus Apoios
                   </Link>
+                )}
+              </nav>
+
+              {/* Action Buttons - Desktop */}
+              {user ? (
+                <>
                   <button
                     onClick={() => router.push('/criar-campanha')}
-                    className="hidden sm:block px-4 py-2 bg-[#ed5544] text-white rounded-md hover:bg-[#d64435] transition-colors font-semibold"
+                    className="hidden md:block px-4 py-2 bg-[#ed5544] text-white rounded-md hover:bg-[#d64435] transition-colors font-semibold text-sm"
                   >
                     Criar Campanha
                   </button>
                   <button
                     onClick={() => router.push('/minhas-campanhas')}
-                    className="hidden sm:block px-4 py-2 border border-[#ed5544] text-[#ed5544] rounded-md hover:bg-[#ed5544]/5 transition-colors font-semibold"
+                    className="hidden md:block px-4 py-2 border border-[#ed5544] text-[#ed5544] rounded-md hover:bg-[#ed5544]/5 transition-colors font-semibold text-sm"
                   >
                     Minhas Campanhas
                   </button>
@@ -92,13 +96,13 @@ export default function Navbar() {
                 <>
                   <button
                     onClick={() => router.push('/login')}
-                    className="hidden sm:block px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors font-semibold"
+                    className="hidden md:block px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors font-semibold text-sm"
                   >
                     Entrar
                   </button>
                   <button
                     onClick={() => router.push('/register')}
-                    className="hidden sm:block px-4 py-2 bg-[#ed5544] text-white rounded-md hover:bg-[#d64435] transition-colors font-semibold"
+                    className="hidden md:block px-4 py-2 bg-[#ed5544] text-white rounded-md hover:bg-[#d64435] transition-colors font-semibold text-sm"
                   >
                     Criar conta
                   </button>
@@ -197,11 +201,12 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden bg-white border-b border-gray-200 shadow-lg">
-          <div className="px-4 py-4 space-y-4">
-            <nav className="space-y-3">
+          <div className="px-4 py-4 space-y-1">
+            {/* Navigation Links */}
+            <nav className="space-y-1">
               <Link
                 href="/campanhas"
-                className="block text-gray-600 hover:text-gray-900 transition-colors font-medium py-2"
+                className="block text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors font-medium py-3 px-3 rounded-md text-sm"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Descobrir
@@ -210,14 +215,14 @@ export default function Navbar() {
                 <>
                   <Link
                     href="/meus-apoios"
-                    className="block text-gray-600 hover:text-gray-900 transition-colors font-medium py-2"
+                    className="block text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors font-medium py-3 px-3 rounded-md text-sm"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Meus Apoios
                   </Link>
                   <Link
                     href="/minhas-campanhas"
-                    className="block text-gray-600 hover:text-gray-900 transition-colors font-medium py-2"
+                    className="block text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors font-medium py-3 px-3 rounded-md text-sm"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Minhas Campanhas
@@ -225,14 +230,16 @@ export default function Navbar() {
                 </>
               )}
             </nav>
-            <div className="pt-4 border-t border-gray-200 space-y-3">
+
+            {/* Action Buttons */}
+            <div className="pt-3 border-t border-gray-200 space-y-2 mt-3">
               {user ? (
                 <button
                   onClick={() => {
                     setIsMobileMenuOpen(false);
                     router.push('/criar-campanha');
                   }}
-                  className="w-full px-4 py-2 bg-[#ed5544] text-white rounded-md hover:bg-[#d64435] transition-colors font-semibold"
+                  className="w-full px-4 py-3 bg-[#ed5544] text-white rounded-md hover:bg-[#d64435] transition-colors font-semibold text-sm"
                 >
                   Criar Campanha
                 </button>
@@ -243,7 +250,7 @@ export default function Navbar() {
                       setIsMobileMenuOpen(false);
                       router.push('/login');
                     }}
-                    className="w-full px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors font-medium border border-gray-300 rounded-md"
+                    className="w-full px-4 py-3 text-gray-700 hover:bg-gray-100 transition-colors font-medium border border-gray-300 rounded-md text-sm"
                   >
                     Entrar
                   </button>
@@ -252,7 +259,7 @@ export default function Navbar() {
                       setIsMobileMenuOpen(false);
                       router.push('/register');
                     }}
-                    className="w-full px-4 py-2 bg-[#ed5544] text-white rounded-md hover:bg-[#d64435] transition-colors font-semibold"
+                    className="w-full px-4 py-3 bg-[#ed5544] text-white rounded-md hover:bg-[#d64435] transition-colors font-semibold text-sm"
                   >
                     Criar conta
                   </button>

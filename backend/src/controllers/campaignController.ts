@@ -73,10 +73,13 @@ export const getCampaign = async (
       });
     }
 
+    // Convert Mongoose document to plain object
+    const campaignObj = campaign.toObject();
+
     res.json({
       success: true,
-      ...(campaign as any),
-    });
+      ...campaignObj,
+    } as any);
   } catch (error) {
     logger.error('Error in getCampaign:', error);
     res.status(500).json({
@@ -103,10 +106,13 @@ export const getCampaignBySlug = async (
       });
     }
 
+    // Convert Mongoose document to plain object
+    const campaignObj = campaign.toObject();
+
     res.json({
       success: true,
-      ...(campaign as any),
-    });
+      ...campaignObj,
+    } as any);
   } catch (error) {
     logger.error('Error in getCampaignBySlug:', error);
     res.status(500).json({

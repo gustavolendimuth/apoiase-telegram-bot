@@ -58,8 +58,14 @@ function CampaignSettingsContent() {
     try {
       setLoadingCampaign(true);
       const response = await campaignApi.getById(campaignId);
-      const campaignData = response.data;
-      setCampaign(campaignData);
+      console.log('📊 Campaign API Response:', response.data);
+
+      // A resposta espalha as propriedades da campanha diretamente (ApiSuccessResponse<ICampaign>)
+      const { success, ...campaignData } = response.data;
+      console.log('📊 Campaign Data (after destructuring):', campaignData);
+      console.log('📊 Campaign Title:', campaignData.title);
+
+      setCampaign(campaignData as ICampaign);
       setEditFormData({
         title: campaignData.title,
         description: campaignData.description,
@@ -222,7 +228,7 @@ function CampaignSettingsContent() {
 
   if (loadingCampaign) {
     return (
-      <div className="bg-white min-h-screen">
+      <div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
@@ -237,7 +243,7 @@ function CampaignSettingsContent() {
 
   if (error && !campaign) {
     return (
-      <div className="bg-white min-h-screen">
+      <div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
             <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -263,9 +269,9 @@ function CampaignSettingsContent() {
   if (!campaign) return null;
 
   return (
-    <div className="bg-white min-h-screen">
+    <div>
       {/* Campaign Header */}
-      <div className="border-b border-gray-200">
+      <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="flex items-start gap-4">
             {/* Campaign Avatar */}
@@ -313,7 +319,7 @@ function CampaignSettingsContent() {
           <div className="flex gap-1 overflow-x-auto">
             <button
               onClick={() => setActiveTab('configuracao')}
-              className={`px-4 py-3 border-b-2 font-medium whitespace-nowrap text-base ${
+              className={`px-4 py-4 border-b-2 font-medium whitespace-nowrap text-base ${
                 activeTab === 'configuracao'
                   ? 'border-[#ed5544] text-[#ed5544]'
                   : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
@@ -323,7 +329,7 @@ function CampaignSettingsContent() {
             </button>
             <button
               onClick={() => setActiveTab('identificacao')}
-              className={`px-4 py-3 border-b-2 font-medium whitespace-nowrap text-base ${
+              className={`px-4 py-4 border-b-2 font-medium whitespace-nowrap text-base ${
                 activeTab === 'identificacao'
                   ? 'border-[#ed5544] text-[#ed5544]'
                   : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
@@ -333,7 +339,7 @@ function CampaignSettingsContent() {
             </button>
             <button
               onClick={() => setActiveTab('descricao')}
-              className={`px-4 py-3 border-b-2 font-medium whitespace-nowrap text-base ${
+              className={`px-4 py-4 border-b-2 font-medium whitespace-nowrap text-base ${
                 activeTab === 'descricao'
                   ? 'border-[#ed5544] text-[#ed5544]'
                   : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
@@ -343,7 +349,7 @@ function CampaignSettingsContent() {
             </button>
             <button
               onClick={() => setActiveTab('metas')}
-              className={`px-4 py-3 border-b-2 font-medium whitespace-nowrap text-base ${
+              className={`px-4 py-4 border-b-2 font-medium whitespace-nowrap text-base ${
                 activeTab === 'metas'
                   ? 'border-[#ed5544] text-[#ed5544]'
                   : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
@@ -353,7 +359,7 @@ function CampaignSettingsContent() {
             </button>
             <button
               onClick={() => setActiveTab('recompensas')}
-              className={`px-4 py-3 border-b-2 font-medium whitespace-nowrap text-base ${
+              className={`px-4 py-4 border-b-2 font-medium whitespace-nowrap text-base ${
                 activeTab === 'recompensas'
                   ? 'border-[#ed5544] text-[#ed5544]'
                   : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
@@ -363,7 +369,7 @@ function CampaignSettingsContent() {
             </button>
             <button
               onClick={() => setActiveTab('integracoes')}
-              className={`px-4 py-3 border-b-2 font-medium whitespace-nowrap text-base ${
+              className={`px-4 py-4 border-b-2 font-medium whitespace-nowrap text-base ${
                 activeTab === 'integracoes'
                   ? 'border-[#ed5544] text-[#ed5544]'
                   : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
@@ -373,7 +379,7 @@ function CampaignSettingsContent() {
             </button>
             <button
               onClick={() => setActiveTab('publicacao')}
-              className={`px-4 py-3 border-b-2 font-medium whitespace-nowrap text-base ${
+              className={`px-4 py-4 border-b-2 font-medium whitespace-nowrap text-base ${
                 activeTab === 'publicacao'
                   ? 'border-[#ed5544] text-[#ed5544]'
                   : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
@@ -742,7 +748,7 @@ function CampaignSettingsContent() {
                               <div className="flex gap-2 pt-2">
                                 <button
                                   onClick={handleCancelEdit}
-                                  className="flex-1 px-4 py-2 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 rounded font-medium text-sm transition-colors"
+                                  className="flex-1 px-4 py-2 bg-white hover:bg-[#ed5544]/10 text-[#ed5544] border border-[#ed5544] rounded font-medium text-sm transition-colors"
                                   disabled={savingIntegration}
                                 >
                                   Cancelar
@@ -860,7 +866,7 @@ function CampaignSettingsContent() {
 export default function CampaignSettingsPage() {
   return (
     <Suspense fallback={
-      <div className="bg-white min-h-screen">
+      <div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
