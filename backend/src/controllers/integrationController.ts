@@ -91,13 +91,14 @@ export class IntegrationController {
 
       res.json({
         integrations: integrations.map((integration) => ({
-          id: integration._id,
+          _id: integration._id,
           campaignId: integration.campaignId,
           telegramGroupId: integration.telegramGroupId,
           telegramGroupTitle: integration.telegramGroupTitle,
           telegramGroupType: integration.telegramGroupType,
           minSupportLevel: integration.minSupportLevel,
           isActive: integration.isActive,
+          createdBy: integration.createdBy,
           createdAt: integration.createdAt,
           updatedAt: integration.updatedAt,
         })),

@@ -3,11 +3,18 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useIntegrations } from "@/hooks/useIntegrations";
-import { Button, Badge, Modal } from "@/components/ui";
+import { Badge, Modal } from "@/components/ui";
 import { campaignApi, integrationApi } from "@/lib/api";
-import type { ICampaign } from 'shared';
+import type { ICampaign, IIntegration } from 'shared';
 
 type TabType = 'configuracao' | 'identificacao' | 'descricao' | 'metas' | 'recompensas' | 'integracoes' | 'publicacao';
+
+// Tipo estendido para integração com propriedades opcionais de UI
+interface IIntegrationWithUI extends IIntegration {
+  accessMode?: 'min_amount' | 'reward_levels';
+  minAmount?: number;
+  rewardLevels?: string[];
+}
 
 function CampaignSettingsContent() {
   const router = useRouter();
@@ -132,7 +139,7 @@ function CampaignSettingsContent() {
     }
   };
 
-  const handleStartEdit = (integration: any) => {
+  const handleStartEdit = (integration: IIntegrationWithUI) => {
     setEditingIntegration(integration._id);
     setEditMode(integration.accessMode || 'min_amount');
     setEditMinAmount(integration.minAmount || 0);
@@ -769,27 +776,22 @@ function CampaignSettingsContent() {
                                 <div>
                                   <span className="font-medium text-gray-700">Controle de Acesso:</span>
                                   <p className="text-gray-900">
-                                    {integration.supportLevels
+                                    {integration.minSupportLevel
                                       ? 'Nível Mínimo Configurado'
                                       : 'Todos os Apoiadores'}
                                   </p>
                                 </div>
-                                {integration.supportLevels && integration.supportLevels.length > 0 && (
+                                {integration.minSupportLevel && (
                                   <div className="col-span-2">
-                                    <span className="font-medium text-gray-700">Níveis de Apoio Aceitos:</span>
+                                    <span className="font-medium text-gray-700">Nível Mínimo de Apoio:</span>
                                     {(() => {
-                                      const matchingLevels = campaign?.rewardLevels.filter((l) =>
-                                        integration.supportLevels.includes(l.id)
-                                      );
-                                      const minLevel = matchingLevels?.reduce((min, level) =>
-                                        level.amount < min.amount ? level : min
-                                      );
+                                      const minLevel = campaign?.rewardLevels.find((l) => l.id === integration.minSupportLevel);
                                       return minLevel ? (
                                         <p className="text-gray-900 mt-1">
                                           A partir de {minLevel.title} (R$ {minLevel.amount.toFixed(2)})
                                         </p>
                                       ) : (
-                                        <p className="text-gray-900 mt-1">Níveis configurados: {integration.supportLevels.join(', ')}</p>
+                                        <p className="text-gray-900 mt-1">ID: {integration.minSupportLevel}</p>
                                       );
                                     })()}
                                   </div>

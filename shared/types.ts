@@ -318,8 +318,8 @@ export interface IIntegration {
   telegramGroupId: string;
   telegramGroupType: 'group' | 'supergroup' | 'channel';
   telegramGroupTitle: string;
-  apiKey: string;
-  supportLevels: string[]; // IDs dos níveis de apoio
+  apiKey?: string;
+  minSupportLevel?: string; // ID do nível mínimo de apoio
   isActive: boolean;
   createdBy: string;
   createdAt: Date;
