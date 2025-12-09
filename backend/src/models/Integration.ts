@@ -12,7 +12,7 @@ export interface IIntegration extends Document {
   apoiaseApiKey?: string;
   apoiaseBearerToken?: string;
   // Controle de acesso por nível mínimo de apoio
-  minSupportLevel?: string; // ID do nível mínimo de apoio (este nível e superiores têm acesso)
+  minSupportLevel?: string; // ID do nível mínimo de apoio (este nível e inferiores têm acesso)
   isActive: boolean;
   createdBy: Types.ObjectId; // Reference to User (maker)
   createdAt: Date;

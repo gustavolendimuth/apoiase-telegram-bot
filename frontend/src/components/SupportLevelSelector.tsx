@@ -51,7 +51,7 @@ export function SupportLevelSelector({
           Escolha o nível mínimo de apoio que dará acesso ao grupo do Telegram.
         </p>
         <p className="text-xs text-blue-600">
-          <strong>Importante:</strong> Apoiadores deste nível E de níveis superiores terão acesso ao grupo.
+          <strong>Importante:</strong> Apoiadores deste nível E de níveis inferiores terão acesso ao grupo.
           Se não selecionar nenhum, todos os apoiadores terão acesso.
         </p>
       </div>
@@ -71,7 +71,7 @@ export function SupportLevelSelector({
             .sort((a, b) => a.amount - b.amount)
             .map((level, index) => {
               const isSelected = selectedMinLevel === level.id;
-              const levelsAbove = rewardLevels.filter(l => l.amount >= level.amount).length - 1;
+              const levelsBelow = rewardLevels.filter(l => l.amount <= level.amount).length - 1;
 
               return (
                 <Card
@@ -90,10 +90,10 @@ export function SupportLevelSelector({
                         </span>
                       </div>
                       <p className="text-sm text-gray-600 mb-2">{level.description}</p>
-                      {isSelected && levelsAbove > 0 && (
+                      {isSelected && levelsBelow > 0 && (
                         <div className="mt-2 bg-green-50 border border-green-200 rounded p-2">
                           <p className="text-xs text-green-700">
-                            ✓ Este nível + {levelsAbove} {levelsAbove === 1 ? 'nível superior' : 'níveis superiores'} terão acesso
+                            ✓ Este nível + {levelsBelow} {levelsBelow === 1 ? 'nível inferior' : 'níveis inferiores'} terão acesso
                           </p>
                         </div>
                       )}

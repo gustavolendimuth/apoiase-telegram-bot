@@ -176,11 +176,11 @@ export class VerificationService {
           });
           // Permitir acesso se o nível mínimo configurado não existe mais
         } else {
-          // Verificar se o valor do apoio do usuário é >= ao valor mínimo
-          if (userLevel.amount < minLevel.amount) {
+          // Verificar se o valor do apoio do usuário é <= ao valor máximo configurado
+          if (userLevel.amount > minLevel.amount) {
             return {
               hasAccess: false,
-              reason: `Nível de apoio insuficiente. Necessário: ${minLevel.title} (${minLevel.amount}) ou superior`,
+              reason: `Nível de apoio acima do permitido. Acesso permitido para: ${minLevel.title} (${minLevel.amount}) ou inferior`,
               supporterData,
             };
           }

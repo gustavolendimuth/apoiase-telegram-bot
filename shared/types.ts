@@ -7,7 +7,7 @@ export interface Integration {
   telegramGroupType: 'group' | 'supergroup' | 'channel';
   telegramGroupTitle: string;
   apiKey: string;
-  minSupportLevel?: string; // Nível mínimo de apoio (este e superiores têm acesso)
+  minSupportLevel?: string; // Nível mínimo de apoio (este e inferiores têm acesso)
   isActive: boolean;
   createdBy: string;
   createdAt: Date;

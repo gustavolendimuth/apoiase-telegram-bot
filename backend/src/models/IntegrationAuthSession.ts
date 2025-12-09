@@ -16,7 +16,7 @@ export interface IIntegrationAuthSession extends Document {
   telegramPhotoUrl?: string;
   selectedGroupId?: string; // ID do grupo Telegram selecionado
   selectedGroupTitle?: string;
-  selectedMinSupportLevel?: string; // Nível mínimo de apoio selecionado (acesso para este nível e superiores)
+  selectedMinSupportLevel?: string; // Nível mínimo de apoio selecionado (acesso para este nível e inferiores)
   status: 'pending' | 'telegram_auth_complete' | 'group_selected' | 'min_support_level_selected' | 'completed' | 'expired' | 'error';
   errorMessage?: string;
   expiresAt: Date;

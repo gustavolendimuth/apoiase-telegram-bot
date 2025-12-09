@@ -485,7 +485,7 @@ function CompleteIntegration({
           </div>
           {session?.selectedMinSupportLevel ? (
             <p className="text-sm text-green-700">
-              Configurado (este nível e superiores terão acesso)
+              Configurado (este nível e inferiores terão acesso)
             </p>
           ) : (
             <p className="text-sm text-green-700">

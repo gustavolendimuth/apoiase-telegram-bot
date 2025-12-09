@@ -425,7 +425,7 @@ export class IntegrationAuthService {
         telegramGroupType: 'supergroup',
         telegramGroupTitle: session.selectedGroupTitle!,
         apiKey,
-        minSupportLevel: session.selectedMinSupportLevel, // Nível mínimo de apoio (este e superiores têm acesso)
+        minSupportLevel: session.selectedMinSupportLevel, // Nível mínimo de apoio (este e inferiores têm acesso)
         isActive: true,
         createdBy: makerId,
         apoiaseApiKey: session.apoiaseApiKey,
