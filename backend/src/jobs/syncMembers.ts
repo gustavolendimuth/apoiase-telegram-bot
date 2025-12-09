@@ -17,9 +17,9 @@ const syncQueue = new Bull('member-sync', {
 });
 
 /**
- * Processa job de sincronização
+ * Processa job de sincronização individual
  */
-syncQueue.process(async (job) => {
+syncQueue.process('sync-integration', async (job) => {
   const { integrationId } = job.data;
 
   logger.info('Iniciando sincronização de membros:', { integrationId });
@@ -45,6 +45,54 @@ syncQueue.process(async (job) => {
 });
 
 /**
+ * Processa job de sincronização diária de todas as integrações
+ */
+syncQueue.process('daily-sync-all', async (job) => {
+  logger.info('Iniciando sincronização diária de todas as integrações');
+
+  try {
+    const integrations = await Integration.find({ isActive: true });
+    const results = [];
+
+    for (const integration of integrations) {
+      try {
+        const result = await verificationService.syncIntegrationMembers(
+          integration._id.toString()
+        );
+        results.push({
+          integrationId: integration._id,
+          success: true,
+          ...result,
+        });
+      } catch (error) {
+        logger.error('Erro ao sincronizar integração:', {
+          integrationId: integration._id,
+          error,
+        });
+        results.push({
+          integrationId: integration._id,
+          success: false,
+          error: error instanceof Error ? error.message : 'Erro desconhecido',
+        });
+      }
+    }
+
+    const summary = {
+      total: integrations.length,
+      successful: results.filter((r) => r.success).length,
+      failed: results.filter((r) => !r.success).length,
+    };
+
+    logger.info('Sincronização diária concluída:', summary);
+
+    return { summary, results };
+  } catch (error) {
+    logger.error('Erro na sincronização diária:', error);
+    throw error;
+  }
+});
+
+/**
  * Job de verificação e remoção automática
  */
 const removalQueue = new Bull('member-removal', {
@@ -56,9 +104,9 @@ const removalQueue = new Bull('member-removal', {
 });
 
 /**
- * Processa remoções automáticas
+ * Processa remoções automáticas (job recorrente)
  */
-removalQueue.process(async (job) => {
+removalQueue.process('removal-check', async (job) => {
   logger.info('Iniciando processo de remoção automática');
 
   try {
@@ -111,40 +159,15 @@ removalQueue.process(async (job) => {
 });
 
 /**
- * Agenda sincronização diária para todas as integrações ativas
+ * Agenda sincronização para uma integração específica
  */
-export async function scheduleDailySyncAll(): Promise<void> {
+export async function scheduleSyncIntegration(integrationId: string): Promise<void> {
   try {
-    const integrations = await Integration.find({ isActive: true });
-
-    for (const integration of integrations) {
-      await syncQueue.add(
-        {
-          integrationId: integration._id.toString(),
-        },
-        {
-          priority: 1,
-          removeOnComplete: true,
-          removeOnFail: false,
-        }
-      );
-    }
-
-    logger.info('Sincronização diária agendada para todas as integrações:', {
-      count: integrations.length,
-    });
-  } catch (error) {
-    logger.error('Erro ao agendar sincronização diária:', error);
-  }
-}
-
-/**
- * Agenda verificação de remoções
- */
-export async function scheduleRemovalCheck(): Promise<void> {
-  try {
-    await removalQueue.add(
-      {},
+    await syncQueue.add(
+      'sync-integration',
+      {
+        integrationId,
+      },
       {
         priority: 1,
         removeOnComplete: true,
@@ -152,11 +175,12 @@ export async function scheduleRemovalCheck(): Promise<void> {
       }
     );
 
-    logger.info('Verificação de remoções agendada');
+    logger.info('Sincronização agendada para integração:', { integrationId });
   } catch (error) {
-    logger.error('Erro ao agendar verificação de remoções:', error);
+    logger.error('Erro ao agendar sincronização:', { integrationId, error });
   }
 }
+
 
 /**
  * Configura jobs recorrentes (cron)
@@ -219,3 +243,4 @@ removalQueue.on('failed', (job, err) => {
 });
 
 export { syncQueue, removalQueue };
+

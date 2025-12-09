@@ -56,3 +56,7 @@ backend/database-exports/
 # OS
 .DS_Store
 Thumbs.db
+
+
+#Ignore cursor AI rules
+.cursor/rules/codacy.mdc
