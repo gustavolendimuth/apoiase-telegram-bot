@@ -4,17 +4,11 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useIntegrations } from "@/hooks/useIntegrations";
 import { Badge, Modal } from "@/components/ui";
+import { SupportLevelSelector } from "@/components/SupportLevelSelector";
 import { campaignApi, integrationApi } from "@/lib/api";
 import type { ICampaign, IIntegration } from 'shared';
 
 type TabType = 'configuracao' | 'identificacao' | 'descricao' | 'metas' | 'recompensas' | 'integracoes' | 'publicacao';
-
-// Tipo estendido para integração com propriedades opcionais de UI
-interface IIntegrationWithUI extends IIntegration {
-  accessMode?: 'min_amount' | 'reward_levels';
-  minAmount?: number;
-  rewardLevels?: string[];
-}
 
 function CampaignSettingsContent() {
   const router = useRouter();
@@ -32,9 +26,6 @@ function CampaignSettingsContent() {
 
   // Integration edit state
   const [editingIntegration, setEditingIntegration] = useState<string | null>(null);
-  const [editMode, setEditMode] = useState<'reward_levels' | 'min_amount'>('min_amount');
-  const [editMinAmount, setEditMinAmount] = useState<number>(0);
-  const [editRewardLevels, setEditRewardLevels] = useState<string[]>([]);
   const [savingIntegration, setSavingIntegration] = useState(false);
 
   // Edit form state
@@ -139,33 +130,22 @@ function CampaignSettingsContent() {
     }
   };
 
-  const handleStartEdit = (integration: IIntegrationWithUI) => {
+  const handleStartEdit = (integration: IIntegration) => {
     setEditingIntegration(integration._id);
-    setEditMode(integration.accessMode || 'min_amount');
-    setEditMinAmount(integration.minAmount || 0);
-    setEditRewardLevels(integration.rewardLevels || []);
   };
 
   const handleCancelEdit = () => {
     setEditingIntegration(null);
   };
 
-  const handleSaveEdit = async (integrationId: string) => {
+  const handleSaveEdit = async (integrationId: string, minSupportLevel: string | null) => {
     try {
       setSavingIntegration(true);
       setError('');
 
       const updates: any = {
-        accessMode: editMode,
+        minSupportLevel,
       };
-
-      if (editMode === 'min_amount') {
-        updates.minAmount = editMinAmount;
-        updates.rewardLevels = [];
-      } else {
-        updates.rewardLevels = editRewardLevels;
-        updates.minAmount = undefined;
-      }
 
       await integrationApi.update(integrationId, updates);
 
@@ -179,13 +159,6 @@ function CampaignSettingsContent() {
     }
   };
 
-  const handleToggleRewardLevel = (levelId: string) => {
-    if (editRewardLevels.includes(levelId)) {
-      setEditRewardLevels(editRewardLevels.filter((id) => id !== levelId));
-    } else {
-      setEditRewardLevels([...editRewardLevels, levelId]);
-    }
-  };
 
   const handleUpdateCampaign = async () => {
     if (!campaignId) return;
@@ -676,98 +649,13 @@ function CampaignSettingsContent() {
 
                           {/* Edit Mode */}
                           {editingIntegration === integration._id ? (
-                            <div className="border-t border-gray-200 bg-white p-4 space-y-4">
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                  Modo de Controle de Acesso
-                                </label>
-                                <div className="space-y-2">
-                                  <label className="flex items-center gap-2">
-                                    <input
-                                      type="radio"
-                                      value="min_amount"
-                                      checked={editMode === 'min_amount'}
-                                      onChange={(e) => setEditMode(e.target.value as any)}
-                                      className="w-4 h-4"
-                                    />
-                                    <span className="text-sm">Valor Mínimo de Contribuição</span>
-                                  </label>
-                                  <label className="flex items-center gap-2">
-                                    <input
-                                      type="radio"
-                                      value="reward_levels"
-                                      checked={editMode === 'reward_levels'}
-                                      onChange={(e) => setEditMode(e.target.value as any)}
-                                      className="w-4 h-4"
-                                    />
-                                    <span className="text-sm">Níveis de Recompensa Específicos</span>
-                                  </label>
-                                </div>
-                              </div>
-
-                              {editMode === 'min_amount' && (
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Valor Mínimo (R$)
-                                  </label>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    value={editMinAmount}
-                                    onChange={(e) => setEditMinAmount(parseFloat(e.target.value) || 0)}
-                                    placeholder="0.00"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ed5544] focus:border-transparent"
-                                  />
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    Apoiadores com contribuição igual ou superior a este valor terão acesso ao grupo.
-                                  </p>
-                                </div>
-                              )}
-
-                              {editMode === 'reward_levels' && (
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Selecione os Níveis de Recompensa
-                                  </label>
-                                  <div className="space-y-2">
-                                    {campaign?.rewardLevels.map((level) => (
-                                      <label key={level.id} className="flex items-start gap-2">
-                                        <input
-                                          type="checkbox"
-                                          checked={editRewardLevels.includes(level.id)}
-                                          onChange={() => handleToggleRewardLevel(level.id)}
-                                          className="w-4 h-4 mt-1"
-                                        />
-                                        <div className="flex-1">
-                                          <span className="text-sm font-medium">{level.title}</span>
-                                          <span className="text-sm text-gray-600 ml-2">
-                                            (R$ {level.amount.toFixed(2)})
-                                          </span>
-                                          <p className="text-xs text-gray-500">{level.description}</p>
-                                        </div>
-                                      </label>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
-                              <div className="flex gap-2 pt-2">
-                                <button
-                                  onClick={handleCancelEdit}
-                                  className="flex-1 px-4 py-2 bg-white hover:bg-[#ed5544]/10 text-[#ed5544] border border-[#ed5544] rounded font-medium text-sm transition-colors"
-                                  disabled={savingIntegration}
-                                >
-                                  Cancelar
-                                </button>
-                                <button
-                                  onClick={() => handleSaveEdit(integration._id)}
-                                  className="flex-1 px-4 py-2 bg-[#ed5544] hover:bg-[#d64435] text-white rounded font-medium text-sm transition-colors disabled:opacity-50"
-                                  disabled={savingIntegration}
-                                >
-                                  {savingIntegration ? 'Salvando...' : 'Salvar'}
-                                </button>
-                              </div>
+                            <div className="border-t border-gray-200 bg-white p-4">
+                              <SupportLevelSelector
+                                campaignSlug={campaign?.slug || ''}
+                                rewardLevels={campaign?.rewardLevels || []}
+                                onLevelSelected={(minLevelId) => handleSaveEdit(integration._id, minLevelId)}
+                                onCancel={handleCancelEdit}
+                              />
                             </div>
                           ) : (
                             /* View Mode */
