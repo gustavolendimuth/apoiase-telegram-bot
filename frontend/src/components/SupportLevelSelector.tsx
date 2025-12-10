@@ -17,14 +17,18 @@ interface SupportLevelSelectorProps {
   rewardLevels: RewardLevel[];
   onLevelSelected: (minLevelId: string | null) => void;
   onCancel: () => void;
+  initialLevel?: string | null;
+  hideInstructions?: boolean;
 }
 
 export function SupportLevelSelector({
   rewardLevels,
   onLevelSelected,
   onCancel,
+  initialLevel = null,
+  hideInstructions = false,
 }: SupportLevelSelectorProps) {
-  const [selectedMinLevel, setSelectedMinLevel] = useState<string | null>(null);
+  const [selectedMinLevel, setSelectedMinLevel] = useState<string | null>(initialLevel);
 
   const handleLevelSelect = (levelId: string) => {
     setSelectedMinLevel(levelId);
@@ -43,18 +47,20 @@ export function SupportLevelSelector({
 
   return (
     <div className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h2 className="font-semibold text-blue-900 mb-2">
-          Passo 3: Selecione o Nível Mínimo de Apoio
-        </h2>
-        <p className="text-sm text-blue-700 mb-2">
-          Escolha o nível mínimo de apoio que dará acesso ao grupo do Telegram.
-        </p>
-        <p className="text-xs text-blue-600">
-          <strong>Importante:</strong> Apoiadores deste nível E de níveis inferiores terão acesso ao grupo.
-          Se não selecionar nenhum, todos os apoiadores terão acesso.
-        </p>
-      </div>
+      {!hideInstructions && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h2 className="font-semibold text-blue-900 mb-2">
+            Passo 3: Selecione o Nível Mínimo de Apoio
+          </h2>
+          <p className="text-sm text-blue-700 mb-2">
+            Escolha o nível mínimo de apoio que dará acesso ao grupo do Telegram.
+          </p>
+          <p className="text-xs text-blue-600">
+            <strong>Importante:</strong> Apoiadores deste nível E de níveis inferiores terão acesso ao grupo.
+            Se não selecionar nenhum, todos os apoiadores terão acesso.
+          </p>
+        </div>
+      )}
 
       {rewardLevels.length === 0 ? (
         <Card className="p-6 text-center">

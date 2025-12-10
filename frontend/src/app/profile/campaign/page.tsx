@@ -655,6 +655,8 @@ function CampaignSettingsContent() {
                                 rewardLevels={campaign?.rewardLevels || []}
                                 onLevelSelected={(minLevelId) => handleSaveEdit(integration._id, minLevelId)}
                                 onCancel={handleCancelEdit}
+                                initialLevel={integration.minSupportLevel || null}
+                                hideInstructions={true}
                               />
                             </div>
                           ) : (
